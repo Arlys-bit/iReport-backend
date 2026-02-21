@@ -1,6 +1,8 @@
 import io, { Socket } from 'socket.io-client';
 
-const SOCKET_IO_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+// Production URL: https://ireport-backend-production.up.railway.app
+// For local development: http://localhost:5000
+const SOCKET_IO_URL = process.env.EXPO_PUBLIC_API_URL || 'https://ireport-backend-production.up.railway.app';
 
 let socket: Socket | null = null;
 

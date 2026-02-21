@@ -1,8 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use your backend URL - change to your friend's laptop IP on demo day
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+// Production URL: https://ireport-backend-production.up.railway.app
+// For local development: http://localhost:5000
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://ireport-backend-production.up.railway.app';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
