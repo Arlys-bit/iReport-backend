@@ -122,6 +122,37 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   };
 
+  const createStudent = async (
+    data: { fullName: string; lrn: string; email: string; password: string; profilePhoto?: string },
+    callbacks?: { onSuccess?: () => void; onError?: (err: any) => void }
+  ) => {
+    try {
+      const response = await apiClient.post('/api/auth/register', {
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        role: 'student',
+      });
+
+      // Also create student record with LRN
+      if (response.data.data?.user?.id) {
+        await apiClient.post('/api/students', {
+          userId: response.data.data.user.id,
+          lrn: data.lrn,
+        });
+      }
+
+      callbacks?.onSuccess?.();
+      return { success: true };
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || 'Failed to create student';
+      callbacks?.onError?.(new Error(errorMsg));
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const isCreatingStudent = false; // TODO: Add loading state if needed
+
   const updateCurrentUser = async (updates: Partial<User | StaffMember | Student>) => {
     if (!currentUser) {
       setError('No user logged in');
@@ -173,6 +204,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     isLoggingIn,
     login,
     register,
+    createStudent,
+    isCreatingStudent,
     logout,
     updateCurrentUser,
 

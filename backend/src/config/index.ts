@@ -22,11 +22,9 @@ export const config = {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   },
 
-  // CORS - For production/mobile, allow all origins or set via environment
+  // CORS - Allow all in development, restrict in production
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? (process.env.CORS_ORIGIN || '*').split(',')
-      : (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:19000,http://localhost:8081,http://127.0.0.1:5000').split(','),
+    origin: '*',
   },
 
   // Socket.IO

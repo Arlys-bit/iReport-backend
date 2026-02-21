@@ -7,10 +7,13 @@ let pool: pg.Pool;
 
 export const getPool = (): pg.Pool => {
   if (!pool) {
+    // Detect if connecting to localhost (no SSL needed)
+    const isLocalhost = config.database.host?.includes('localhost') || config.database.host?.includes('127.0.0.1');
+    
     if (config.database.url) {
       pool = new Pool({
         connectionString: config.database.url,
-        ssl: config.isProduction ? { rejectUnauthorized: false } : false,
+        ssl: isLocalhost ? false : (config.isProduction ? { rejectUnauthorized: false } : false),
       });
     } else {
       pool = new Pool({
@@ -19,6 +22,7 @@ export const getPool = (): pg.Pool => {
         database: config.database.name,
         user: config.database.user,
         password: config.database.password,
+        ssl: isLocalhost ? false : (config.isProduction ? { rejectUnauthorized: false } : false),
       });
     }
 

@@ -33,14 +33,38 @@ export const authService = {
 
     const token = generateToken(payload);
 
+    // For staff/admin users, fetch additional staff data
+    let staffData = {};
+    if (user.role === 'admin' || user.role === 'teacher' || user.role === 'staff') {
+      try {
+        const staffResult = await query(
+          'SELECT id, staff_id, position, school_email, specialization, rank FROM staff_members WHERE user_id = $1',
+          [user.id]
+        );
+        if (staffResult.rows.length > 0) {
+          const staff = staffResult.rows[0];
+          staffData = {
+            staffId: staff.staff_id,
+            position: staff.position,
+            schoolEmail: staff.school_email,
+            specialization: staff.specialization,
+            rank: staff.rank,
+          };
+        }
+      } catch (err) {
+        console.error('Error fetching staff data:', err);
+      }
+    }
+
     return {
       token,
-      refreshToken: token, // Implement refresh token logic separately if needed
+      refreshToken: token,
       user: {
         id: user.id,
         email: user.email,
         fullName: user.full_name,
         role: user.role,
+        ...staffData,
       },
     };
   },
