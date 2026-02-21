@@ -1,4 +1,11 @@
 {
+  "name": "ireport-monorepo",
+  "version": "1.0.0",
+  "description": "iReport - School Incident Reporting System",
+  "scripts": {
+    "build": "cd backend && npm run build",
+    "start": "cd backend && npm run start"
+  },
   "dependencies": {
     "@react-native-community/datetimepicker": "^8.6.0",
     "expo": "^54.0.33",
