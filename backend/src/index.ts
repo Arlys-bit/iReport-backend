@@ -41,10 +41,16 @@ app.use(errorHandler);
 // Database initialization and server start
 const initializeAndStart = async () => {
   try {
-    console.log('🔧 Initializing database...');
-    await runMigrations();
-    await seedDatabase();
-    console.log('✅ Database initialized');
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.warn('⚠️  DATABASE_URL not set, skipping migrations');
+      console.warn('Set DATABASE_URL environment variable and restart to run migrations');
+    } else {
+      console.log('🔧 Initializing database...');
+      await runMigrations();
+      await seedDatabase();
+      console.log('✅ Database initialized');
+    }
 
     httpServer.listen(config.port, () => {
       console.log(`
