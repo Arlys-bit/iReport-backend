@@ -9,11 +9,7 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "node": "18.18.0",
-      "npm": {
-        "version": "10.2.4"
-      }
+      "distribution": "internal"
     },
     "production": {
       "autoIncrement": true
