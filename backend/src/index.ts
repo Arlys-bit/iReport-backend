@@ -24,9 +24,18 @@ app.use(cors({
   credentials: true,
 }));
 
-// Health check
+// Health check endpoints
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/debug', (req, res) => {
+  res.json({ 
+    status: 'running',
+    port: config.port,
+    env: config.env,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // API Routes
