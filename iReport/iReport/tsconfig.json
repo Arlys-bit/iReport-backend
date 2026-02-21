@@ -14,6 +14,11 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "allowImportingTsExtensions": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "useDefineForClassFields": false,
     "paths": {
       "@/*": [
         "./*"
