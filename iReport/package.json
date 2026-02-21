@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "expo": "^54.0.32",
+    "expo-router": "^6.0.22",
+    "openai": "^6.16.0",
+    "react-dom": "19.1.0",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}
