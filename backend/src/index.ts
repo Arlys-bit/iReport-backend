@@ -50,6 +50,11 @@ app.use(errorHandler);
 // Database initialization and server start
 const initializeAndStart = async () => {
   try {
+    console.log('Starting iReport Backend...');
+    console.log('Environment:', config.env);
+    console.log('Port:', config.port);
+    console.log('Database URL set:', !!process.env.DATABASE_URL);
+    
     // Check if DATABASE_URL is set
     if (!process.env.DATABASE_URL) {
       console.warn('⚠️  DATABASE_URL not set, skipping migrations');
