@@ -4,15 +4,8 @@
     "slug": "iwitness-bullying-report",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "rork-app",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.rork.iwitness-bullying-report",
@@ -23,10 +16,6 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "app.rork.iwitness_bullying_report",
       "permissions": [
         "android.permission.CAMERA",
@@ -36,7 +25,6 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       [
