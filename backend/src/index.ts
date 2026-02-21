@@ -52,13 +52,13 @@ const initializeAndStart = async () => {
       console.log('✅ Database initialized');
     }
 
-    httpServer.listen(config.port, () => {
+    httpServer.listen(config.port, '0.0.0.0', () => {
       console.log(`
 ╭─────────────────────────────────────╮
 │   iReport Backend API is Running    │
 ├─────────────────────────────────────┤
-│   🌐 Server: http://localhost:${config.port}        │
-│   📡 WebSocket: ws://localhost:${config.port}        │
+│   🌐 Server: http://0.0.0.0:${config.port}        │
+│   📡 WebSocket: ws://0.0.0.0:${config.port}        │
 │   🗄️  Database: ${config.database.name}           │
 │   🔐 JWT Secret: ${config.jwt.secret.substring(0, 10)}...    │
 ╰─────────────────────────────────────╯
