@@ -22,15 +22,19 @@ export const config = {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   },
 
-  // CORS
+  // CORS - For production/mobile, allow all origins or set via environment
   cors: {
-    origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
+    origin: process.env.NODE_ENV === 'production' 
+      ? (process.env.CORS_ORIGIN || '*').split(',')
+      : (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:19000,http://localhost:8081,http://127.0.0.1:5000').split(','),
   },
 
   // Socket.IO
   socketIO: {
     cors: {
-      origin: (process.env.SOCKET_IO_CORS || 'http://localhost:3000').split(','),
+      origin: process.env.NODE_ENV === 'production'
+        ? (process.env.SOCKET_IO_CORS || '*')
+        : (process.env.SOCKET_IO_CORS || 'http://localhost:3000,http://localhost:19000,http://localhost:8081,http://127.0.0.1:5000').split(','),
       methods: ['GET', 'POST'],
     },
   },
