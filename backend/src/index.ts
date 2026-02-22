@@ -13,8 +13,13 @@ import { seedDatabase } from './database/seed.js';
 const app = express();
 const httpServer = createServer(app);
 
-// Initialize Socket.IO
-const io = initializeSocketIO(httpServer);
+// Initialize Socket.IO safely
+let io;
+try {
+  io = initializeSocketIO(httpServer);
+} catch (err) {
+  console.error('Socket.IO initialization error:', err);
+}
 
 // Middleware
 app.use(express.json());
@@ -38,10 +43,10 @@ app.get('/debug', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/students', studentRoutes);
+// API Routes - disabled for now
+// app.use('/api/auth', authRoutes);
+// app.use('/api/reports', reportRoutes);
+// app.use('/api/students', studentRoutes);
 
 // Error handling
 app.use(notFoundHandler);
