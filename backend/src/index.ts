@@ -5,102 +5,89 @@ console.log('[START] Node version:', process.version);
 console.log('[START] Environment:', process.env.NODE_ENV);
 console.log('[START] Timestamp:', new Date().toISOString());
 
-let server;
+let isShuttingDown = false;
 
 try {
-  console.log('[LOAD] Loading Express...');
   const express = require('express');
-  console.log('[LOAD] Express loaded successfully');
-  
   const app = express();
   
-  // Simple test endpoint
+  // Ultra-fast health check - must respond instantly
   app.get('/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'ok', 
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString() 
-    });
+    // Respond immediately without any async operations
+    res.status(200).set('Content-Type', 'application/json').end('{"status":"ok"}');
   });
   
+  // Root endpoint
   app.get('/', (req, res) => {
-    res.json({ 
-      message: 'iReport Backend Ready', 
-      version: '1.0.0',
-      uptime: process.uptime()
-    });
+    res.json({ message: 'iReport Backend Ready', version: '1.0.0' });
   });
   
-  // Add a ping endpoint to keep the process alive
+  // Ping endpoint
   app.get('/ping', (req, res) => {
     res.json({ pong: true });
   });
   
+  // Error handling middleware
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
+  
   const PORT = parseInt(process.env.PORT || '3000', 10);
-  console.log('[SETUP] Starting server on port:', PORT);
+  console.log('[STARTUP] Listening on port:', PORT);
   
-  server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SUCCESS] Server is listening on 0.0.0.0:${PORT}`);
-    console.log('[SUCCESS] Ready to accept requests');
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log('[READY] Server ready to accept connections');
   });
   
-  // Keep the process alive by setting a dummy interval
-  const keepAlive = setInterval(() => {
-    console.log('[ALIVE] Process still running, uptime:', process.uptime().toFixed(2), 'seconds');
-  }, 30000); // Log every 30 seconds
-  
-  // Prevent the interval from keeping the process alive unnecessarily
-  keepAlive.unref();
-  
-  server.on('clientError', (err, socket) => {
-    console.warn('[WARN] Client error:', err.message);
-    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  // Disable Nagle's algorithm for faster responses
+  server.on('connection', (socket) => {
+    socket.setNoDelay(true);
   });
   
+  // Handle errors
   server.on('error', (err) => {
-    console.error('[SERVER_ERROR]', err.message);
-    if (err.code === 'EADDRINUSE') {
-      console.error('[ERROR] Port', PORT, 'is already in use');
+    console.error('[SERVER_ERROR]', err.code, err.message);
+    if (!isShuttingDown) {
+      process.exit(1);
     }
   });
   
-  // Handle process signals
+  // Handle SIGTERM - Railway's graceful shutdown
   process.on('SIGTERM', () => {
-    console.log('[SIGTERM] Received SIGTERM signal at', new Date().toISOString());
-    console.log('[SIGTERM] Closing server gracefully...');
+    console.log('[SIGTERM] Received shutdown signal');
+    isShuttingDown = true;
     
     server.close(() => {
-      console.log('[SIGTERM] Server closed gracefully');
+      console.log('[SHUTDOWN] Server closed');
       process.exit(0);
     });
     
-    // Force exit after 10 seconds
+    // Force exit if graceful shutdown takes too long
     setTimeout(() => {
-      console.error('[SIGTERM] Forcing exit after timeout');
+      console.error('[SHUTDOWN] Forcing exit');
       process.exit(1);
     }, 10000);
   });
   
   process.on('SIGINT', () => {
-    console.log('[SIGINT] Received SIGINT signal');
+    console.log('[SIGINT] Shutting down');
     process.exit(0);
   });
   
+  // Prevent memory leaks
   process.on('uncaughtException', (err) => {
-    console.error('[UNCAUGHT_EXCEPTION]', err);
+    console.error('[UNCAUGHT]', err.message);
     process.exit(1);
   });
   
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('[UNHANDLED_REJECTION]', reason);
+  process.on('unhandledRejection', (reason) => {
+    console.error('[REJECTION]', reason);
   });
   
-  // Log that startup is complete
-  console.log('[STARTUP_COMPLETE] Application is fully initialized and ready');
-  
+  console.log('[COMPLETE] Application initialized');
   module.exports = app;
   
 } catch (error) {
-  console.error('[FATAL_ERROR] Startup error:', error);
+  console.error('[FATAL]', error.message);
   process.exit(1);
 }
