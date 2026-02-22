@@ -55,17 +55,7 @@ const initializeAndStart = async () => {
     console.log('Port:', config.port);
     console.log('Database URL set:', !!process.env.DATABASE_URL);
     
-    // Check if DATABASE_URL is set
-    if (!process.env.DATABASE_URL) {
-      console.warn('⚠️  DATABASE_URL not set, skipping migrations');
-      console.warn('Set DATABASE_URL environment variable and restart to run migrations');
-    } else {
-      console.log('🔧 Initializing database...');
-      await runMigrations();
-      await seedDatabase();
-      console.log('✅ Database initialized');
-    }
-
+    // Start server first, then initialize database in background
     httpServer.listen(config.port, '0.0.0.0', () => {
       console.log(`
 ╭─────────────────────────────────────╮
@@ -78,6 +68,20 @@ const initializeAndStart = async () => {
 ╰─────────────────────────────────────╯
       `);
     });
+
+    // Initialize database in background (non-blocking)
+    if (!process.env.DATABASE_URL) {
+      console.warn('⚠️  DATABASE_URL not set, skipping migrations');
+    } else {
+      console.log('🔧 Initializing database in background...');
+      try {
+        await runMigrations();
+        await seedDatabase();
+        console.log('✅ Database initialized');
+      } catch (dbError) {
+        console.error('⚠️  Database initialization error (non-blocking):', dbError);
+      }
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
