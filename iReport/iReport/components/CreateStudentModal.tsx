@@ -41,13 +41,23 @@ export default function CreateStudentModal({ visible, onClose }: Props) {
   };
 
   const handleSubmit = () => {
+    console.log('📌 handleSubmit clicked');
     const validationError = validate();
+    console.log('📌 validationError:', validationError);
     if (validationError) {
+      console.log('📌 Setting error:', validationError);
       setError(validationError);
       return;
     }
 
     setError(null);
+
+    console.log('📌 Calling createStudent with:', { 
+      fullName: fullName.trim(), 
+      lrn: lrn.trim(), 
+      email: email.trim().toLowerCase(), 
+      password 
+    });
 
     // Call createStudent and use onSuccess/onError callbacks
     // createStudent comes from useAuth and is a mutation.mutate
@@ -55,10 +65,12 @@ export default function CreateStudentModal({ visible, onClose }: Props) {
       { fullName: fullName.trim(), lrn: lrn.trim(), email: email.trim().toLowerCase(), password, profilePhoto: profilePhoto.trim() || undefined },
       {
         onSuccess: () => {
+          console.log('📌 Student created successfully');
           reset();
           onClose();
         },
         onError: (e: any) => {
+          console.log('📌 Error creating student:', e?.message);
           setError(e?.message || 'Failed to create student');
         },
       }

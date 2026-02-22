@@ -53,6 +53,7 @@ export default function StudentReportScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [cantRememberDateTime, setCantRememberDateTime] = useState(false);
   const [photoEvidence, setPhotoEvidence] = useState(undefined as string | undefined);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const handleLogout = () => {
     router.back();
@@ -80,7 +81,7 @@ export default function StudentReportScreen() {
     setShowTimePicker(false);
   };
 
-  const handleSubmitReport = () => {
+  const handleSubmitReport = async () => {
     if (!victimName.trim()) {
       Alert.alert('Required Field', 'Please enter the name of the student being bullied.');
       return;
@@ -103,44 +104,59 @@ export default function StudentReportScreen() {
       }
     }
 
-    if (!currentUser) return;
+    if (!currentUser) {
+      Alert.alert('Error', 'You must be logged in to submit a report');
+      return;
+    }
 
-    createReport({
-      reporterId: currentUser.id,
-      reporterName: currentUser.fullName,
-      reporterLRN: currentUser.lrn || '',
-      reporterPhoto: currentUser.profilePhoto,
-      isAnonymous,
-      victimName: victimName.trim(),
-      location: location.trim(),
-      description: description.trim(),
-      dateTime: cantRememberDateTime ? undefined : selectedDate + (selectedTime && selectedTime.includes(':') ? ` ${selectedTime} ${selectedPeriod}` : ''),
-      cantRememberDateTime,
-      photoEvidence,
-      reportingForSelf,
-    });
-
-    Alert.alert(
-      'Report Submitted',
-      'Your incident report has been submitted successfully. Thank you for making our school safer.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setVictimName('');
-            setLocation('');
-            setDescription('');
-            setSelectedDate('');
-            setSelectedTime('1:00');
-            setSelectedPeriod('AM');
-            setCantRememberDateTime(false);
-            setPhotoEvidence(undefined);
-            setReportingForSelf(true);
-            setIsAnonymous(false);
-          },
+    try {
+      console.log('🔄 Submitting report...');
+      const result = await createReport({
+        reporterId: currentUser.id,
+        reporterName: currentUser.fullName,
+        reporterLRN: currentUser.lrn || '',
+        reporterPhoto: currentUser.profilePhoto,
+        isAnonymous,
+        victimName: victimName.trim(),
+        location: {
+          building: (location.split('-')?.[0]?.trim() as 'A' | 'B' | 'C' | 'D') || 'A',
+          floor: (location.split('-')?.[1]?.trim() as '1st' | '2nd' | '3rd' | '4th') || '1st',
+          room: location.split('-')?.[2]?.trim() || location.trim(),
         },
-      ]
-    );
+        description: description.trim(),
+        dateTime: cantRememberDateTime ? undefined : selectedDate + (selectedTime && selectedTime.includes(':') ? ` ${selectedTime} ${selectedPeriod}` : ''),
+        cantRememberDateTime,
+        photoEvidence,
+        reportingForSelf,
+        incidentType: 'other',
+      });
+
+      console.log('✅ Report submitted successfully:', result);
+
+      // Reset form immediately
+      console.log('📝 Resetting form...');
+      setVictimName('');
+      setLocation('');
+      setDescription('');
+      setSelectedDate('');
+      setSelectedTime('1:00');
+      setSelectedPeriod('AM');
+      setCantRememberDateTime(false);
+      setPhotoEvidence(undefined);
+      setReportingForSelf(true);
+      setIsAnonymous(false);
+
+      // Show success message
+      setShowSuccessMessage(true);
+    } catch (error) {
+      console.error('❌ Error submitting report:', error);
+      Alert.alert('Error', 'Failed to submit report. Please try again.');
+    }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessMessage(false);
+    router.back();
   };
 
   return (
@@ -508,6 +524,22 @@ export default function StudentReportScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {showSuccessMessage && (
+        <View style={styles.successOverlay}>
+          <View style={styles.successBox}>
+            <Text style={styles.successEmoji}>✅</Text>
+            <Text style={styles.successTitle}>Report Submitted!</Text>
+            <Text style={styles.successMessage}>Thank you for helping keep our school safe.</Text>
+            <TouchableOpacity
+              style={styles.successButton}
+              onPress={handleSuccessClose}
+            >
+              <Text style={styles.successButtonText}>Got It</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -902,5 +934,57 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600' as const,
     color: colors.text,
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  successBox: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 40,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  successEmoji: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  successButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    minWidth: 120,
+  },
+  successButtonText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });

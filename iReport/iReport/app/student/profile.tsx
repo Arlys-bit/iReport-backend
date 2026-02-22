@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -40,17 +41,19 @@ const LANGUAGES = [
 
 export default function StudentProfile() {
   const { currentUser, updateCurrentUser, logout } = useAuth();
-  const { gradeLevels, sections, updateStudent, resetStudentPassword } = useStudents();
+  const { students, gradeLevels, sections, updateStudent, resetStudentPassword, changeStudentPassword, changeStudentPasswordMutation } = useStudents();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  const student = currentUser as Student;
+  // Find the current user in the students list, fall back to currentUser if not found
+  const student = (students.find(s => s.id === currentUser?.id) || currentUser) as Student;
   const currentGrade = gradeLevels.find(g => g.id === student?.gradeLevelId);
   const currentSection = sections.find(s => s.id === student?.sectionId);
 
@@ -124,8 +127,11 @@ export default function StudentProfile() {
     }
 
     try {
-      await resetStudentPassword({ studentId: student.id, newPassword });
+      await changeStudentPassword({ studentId: student.id, newPassword });
       await updateCurrentUser({ password: newPassword });
+      // Update the local student reference so the next password change works
+      student.password = newPassword;
+      
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -137,21 +143,17 @@ export default function StudentProfile() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            router.replace('/login');
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    try {
+      await logout();
+      router.replace('/login');
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   };
 
   const getLanguageName = (code: string) => {
@@ -342,8 +344,16 @@ export default function StudentProfile() {
                 secureTextEntry
               />
             </View>
-            <TouchableOpacity style={styles.modalButton} onPress={handleChangePassword}>
-              <Text style={styles.modalButtonText}>Change Password</Text>
+            <TouchableOpacity 
+              style={[styles.modalButton, changeStudentPasswordMutation?.isPending && styles.disabledButton]} 
+              onPress={handleChangePassword}
+              disabled={changeStudentPasswordMutation?.isPending}
+            >
+              {changeStudentPasswordMutation?.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.modalButtonText}>Change Password</Text>
+              )}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -381,6 +391,29 @@ export default function StudentProfile() {
             ))}
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={showLogoutModal} transparent animationType="fade">
+        <View style={styles.logoutModalOverlay}>
+          <View style={styles.logoutModalContent}>
+            <Text style={styles.logoutModalTitle}>Logout</Text>
+            <Text style={styles.logoutModalMessage}>Are you sure you want to logout?</Text>
+            <View style={styles.logoutModalButtons}>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, styles.cancelButton]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, styles.logoutConfirmButton]}
+                onPress={confirmLogout}
+              >
+                <Text style={styles.logoutConfirmButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -620,6 +653,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  disabledButton: {
+    backgroundColor: colors.textLight,
+    opacity: 0.5,
+  },
   modalButtonText: {
     fontSize: 16,
     fontWeight: '700' as const,
@@ -661,5 +698,56 @@ const styles = StyleSheet.create({
   pickerOptionTextSelected: {
     fontWeight: '600' as const,
     color: colors.primary,
+  },
+  logoutModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  logoutModalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  logoutModalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  logoutModalMessage: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 24,
+  },
+  logoutModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  logoutModalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.border,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontWeight: '600' as const,
+  },
+  logoutConfirmButton: {
+    backgroundColor: colors.error,
+  },
+  logoutConfirmButtonText: {
+    color: colors.surface,
+    fontWeight: '600' as const,
   },
 });

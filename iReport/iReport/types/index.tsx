@@ -31,12 +31,14 @@ export type SubjectSpecialization =
 
 export type StaffPermission = 
   | 'edit_students'
+  | 'edit_any_student'
   | 'assign_grades_sections'
   | 'promote_transfer_students'
   | 'edit_staff_profiles'
   | 'manage_reports'
   | 'access_sensitive_data'
   | 'manage_permissions'
+  | 'manage_staff_accounts'
   | 'view_all_reports'
   | 'create_grades_sections'
   | 'remove_students'
@@ -195,7 +197,7 @@ export function hasPermission(user: StaffMember | null, permission: StaffPermiss
   if (!user) return false;
   if (user.role === 'admin' || user.role === 'principal') return true;
   if (user.role === 'guidance' && permission !== 'manage_permissions') return true;
-  return user.permissions.includes(permission);
+  return user.permissions && Array.isArray(user.permissions) ? user.permissions.includes(permission) : false;
 }
 
 export function canAccessAllData(user: StaffMember | null): boolean {

@@ -11,6 +11,12 @@ export default function TeacherLayout() {
         }} 
       />
       <Stack.Screen 
+        name="profile" 
+        options={{ 
+          title: 'My Profile',
+        }} 
+      />
+      <Stack.Screen 
         name="students/[id]" 
         options={{ 
           title: 'Student Profile',

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,21 +6,62 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Mail, IdCard, GraduationCap, User, AlertTriangle } from 'lucide-react-native';
+import { Mail, IdCard, GraduationCap, User, AlertTriangle, Edit2, X } from 'lucide-react-native';
 import { useStudents } from '@/contexts/StudentsContext';
 import { useReports } from '@/contexts/ReportContext';
-import { ViolationRecord } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { ViolationRecord, StaffMember } from '@/types';
 import colors from '@/constants/colors';
 
 export default function TeacherStudentProfile() {
   const { id } = useLocalSearchParams();
-  const { students, gradeLevels, sections } = useStudents();
+  const { students, gradeLevels, sections, updateStudent } = useStudents();
   const { reports } = useReports();
+  const { currentUser } = useAuth();
+  const staffMember = currentUser as StaffMember;
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editedFirstName, setEditedFirstName] = useState('');
+  const [editedLastName, setEditedLastName] = useState('');
+  const [editedEmail, setEditedEmail] = useState('');
+  const [editedSchoolEmail, setEditedSchoolEmail] = useState('');
 
   const student = useMemo(() => students.find(s => s.id === id), [students, id]);
+
+  // Check if teacher can VIEW this student
+  // View access allowed if:
+  // 1. Student is in assigned section, OR
+  // 2. Has edit_any_student permission
+  const hasViewAccess = useMemo(() => {
+    if (!student || !staffMember?.assignedSectionIds || staffMember.assignedSectionIds.length === 0) {
+      return staffMember?.permissions?.includes('edit_any_student') || false;
+    }
+    
+    const isInAssignedSection = staffMember.assignedSectionIds.includes(student.sectionId);
+    const canEditAnyStudent = staffMember.permissions?.includes('edit_any_student') || false;
+    
+    return isInAssignedSection || canEditAnyStudent;
+  }, [student, staffMember]);
+
+  // Check if teacher can EDIT this student
+  // Edit access ONLY if:
+  // 1. Student is in assigned section (no special permission needed), OR
+  // 2. Has edit_any_student permission (can edit any student)
+  const canEditStudent = useMemo(() => {
+    if (!student || !staffMember?.assignedSectionIds) {
+      return staffMember?.permissions?.includes('edit_any_student') || false;
+    }
+    
+    const isInAssignedSection = staffMember.assignedSectionIds.includes(student.sectionId);
+    const hasEditAnyPermission = staffMember?.permissions?.includes('edit_any_student') || false;
+    
+    return isInAssignedSection || hasEditAnyPermission;
+  }, [student, staffMember]);
 
   const studentReports = useMemo(() => {
     return reports.filter(r => r.reporterId === id);
@@ -29,11 +70,51 @@ export default function TeacherStudentProfile() {
   const currentGrade = useMemo(() => gradeLevels.find(g => g.id === student?.gradeLevelId), [gradeLevels, student]);
   const currentSection = useMemo(() => sections.find(s => s.id === student?.sectionId), [sections, student]);
 
-  if (!student) {
+  const openEditModal = () => {
+    if (student) {
+      const [firstName, ...lastNameParts] = student.fullName.split(' ');
+      setEditedFirstName(firstName);
+      setEditedLastName(lastNameParts.join(' '));
+      setEditedEmail(student.email);
+      setEditedSchoolEmail(student.schoolEmail || '');
+      setIsEditModalVisible(true);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    if (!student) return;
+    
+    if (!editedFirstName.trim() || !editedLastName.trim()) {
+      Alert.alert('Error', 'First name and last name are required');
+      return;
+    }
+
+    if (!editedEmail.trim() || !editedSchoolEmail.trim()) {
+      Alert.alert('Error', 'Both email addresses are required');
+      return;
+    }
+
+    try {
+      const updatedStudent = {
+        ...student,
+        fullName: `${editedFirstName.trim()} ${editedLastName.trim()}`,
+        email: editedEmail.trim(),
+        schoolEmail: editedSchoolEmail.trim(),
+      };
+
+      await updateStudent(updatedStudent);
+      setIsEditModalVisible(false);
+      Alert.alert('Success', 'Student information updated successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update student information');
+    }
+  };
+
+  if (!student || !hasViewAccess) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Student not found</Text>
+          <Text style={styles.errorText}>{!student ? 'Student not found' : 'You do not have access to this student'}</Text>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
@@ -55,6 +136,13 @@ export default function TeacherStudentProfile() {
           )}
           <Text style={styles.name}>{student.fullName}</Text>
           <Text style={styles.subtitle}>{currentGrade?.name} - Section {currentSection?.name}</Text>
+          
+          {canEditStudent && (
+            <TouchableOpacity style={styles.editButton} onPress={openEditModal}>
+              <Edit2 size={16} color={colors.surface} />
+              <Text style={styles.editButtonText}>Edit Student</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -127,10 +215,83 @@ export default function TeacherStudentProfile() {
         <View style={styles.infoBox}>
           <Text style={styles.infoBoxTitle}>Teacher View</Text>
           <Text style={styles.infoBoxText}>
-            You can view student information for students in your assigned sections. 
-            For editing student records, please contact the guidance office or admin.
+            You can view student information for students in your assigned sections.
+            {canEditStudent ? ' You can edit this student\'s basic information.' : ' Contact your administrator to get edit permissions.'}
           </Text>
         </View>
+
+        <Modal
+          visible={isEditModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsEditModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Student Information</Text>
+                <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                  <X size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedFirstName}
+                  onChangeText={setEditedFirstName}
+                  placeholder="First Name"
+                  placeholderTextColor={colors.textLight}
+                />
+
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedLastName}
+                  onChangeText={setEditedLastName}
+                  placeholder="Last Name"
+                  placeholderTextColor={colors.textLight}
+                />
+
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedEmail}
+                  onChangeText={setEditedEmail}
+                  placeholder="Email"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="email-address"
+                />
+
+                <Text style={styles.inputLabel}>School Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedSchoolEmail}
+                  onChangeText={setEditedSchoolEmail}
+                  placeholder="School Email"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="email-address"
+                />
+              </ScrollView>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setIsEditModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.saveButton]}
+                  onPress={handleSaveChanges}
+                >
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -323,5 +484,100 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1E40AF',
     lineHeight: 20,
+  },
+  editButton: {
+    marginTop: 12,
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButtonText: {
+    color: colors.surface,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    width: '100%',
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: colors.text,
+  },
+  modalForm: {
+    padding: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: colors.text,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.text,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+  },
+  saveButtonText: {
+    color: colors.surface,
+    fontSize: 14,
+    fontWeight: '600' as const,
   },
 });

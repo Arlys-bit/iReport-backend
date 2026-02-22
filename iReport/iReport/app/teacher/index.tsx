@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Users, FileText, Bell, GraduationCap, ChevronRight, ChevronLeft } from 'lucide-react-native';
+import { Users, FileText, Bell, GraduationCap, ChevronRight, ChevronLeft, User } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/contexts/ReportContext';
 import { useStudents } from '@/contexts/StudentsContext';
@@ -25,8 +25,11 @@ export default function TeacherDashboard() {
   const staffMember = currentUser as StaffMember;
 
   const myStudents = useMemo(() => {
-    if (!staffMember?.id) return [];
-    return getStudentsByTeacher(staffMember.id);
+    if (!staffMember?.id || !staffMember?.assignedSectionIds || staffMember.assignedSectionIds.length === 0) return [];
+    // Only return students from assigned sections
+    return getStudentsByTeacher(staffMember.id).filter(student => 
+      staffMember.assignedSectionIds && staffMember.assignedSectionIds.includes(student.sectionId)
+    );
   }, [staffMember, getStudentsByTeacher]);
 
   const myReports = useMemo(() => {
@@ -39,8 +42,8 @@ export default function TeacherDashboard() {
   }, [myReports]);
 
   const assignedSections = useMemo(() => {
-    if (!staffMember?.assignedSectionIds) return [];
-    return sections.filter(s => staffMember.assignedSectionIds?.includes(s.id));
+    if (!staffMember?.assignedSectionIds || staffMember.assignedSectionIds.length === 0) return [];
+    return sections.filter(s => staffMember.assignedSectionIds && staffMember.assignedSectionIds.includes(s.id));
   }, [staffMember, sections]);
 
   const unreadCount = staffMember?.id ? getUnreadNotificationCount(staffMember.id) : 0;
@@ -79,6 +82,12 @@ export default function TeacherDashboard() {
               </View>
             </View>
           )}
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => router.push('/teacher/profile' as any)}
+          >
+            <User size={20} color={colors.text} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.replace('/selector')}
@@ -311,6 +320,9 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
   backButton: {
+    padding: 8,
+  },
+  profileButton: {
     padding: 8,
   },
   content: {

@@ -2,6 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Student, GradeLevel, Section, ViolationRecord } from '@/types';
+import apiClient from '@/services/apiClient';
 
 const STORAGE_KEYS = {
   STUDENTS: 'school_students',
@@ -24,6 +25,36 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
   const studentsQuery = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
+      try {
+        // First try to fetch from backend
+        const response = await apiClient.get('/api/students');
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          // Transform snake_case fields from backend to camelCase for frontend
+          const students = response.data.data.map((student: any) => ({
+            id: student.id,
+            email: student.email,
+            fullName: student.full_name,
+            lrn: student.lrn,
+            role: student.role,
+            schoolEmail: student.school_email,
+            gradeLevelId: student.grade_level_id,
+            sectionId: student.section_id,
+            assignedTeacherId: student.assigned_teacher_id,
+            createdAt: student.created_at,
+            isActive: student.is_active,
+            userId: student.user_id,
+            password: student.password,
+            violationHistory: student.violation_history || [],
+          }));
+          // Cache to AsyncStorage for offline access
+          await AsyncStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+          return students;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch students from backend, using cached data:', error);
+      }
+      
+      // Fall back to cached data
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.STUDENTS);
       return stored ? JSON.parse(stored) : [];
     },
@@ -124,18 +155,45 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
 
   const createStudentMutation = useMutation({
     mutationFn: async (data: Omit<Student, 'id' | 'createdAt' | 'role' | 'isActive' | 'violationHistory'>) => {
+      console.log('🟢 createStudentMutation started with data:', data);
       const students: Student[] = studentsQuery.data || [];
       
       const lrnExists = students.some(s => s.lrn === data.lrn);
       if (lrnExists) {
+        console.log('🟢 LRN already exists');
         throw new Error('LRN already exists');
       }
       
       const emailExists = students.some(s => s.email.toLowerCase() === data.email.toLowerCase());
       if (emailExists) {
+        console.log('🟢 Email already exists');
         throw new Error('Email already exists');
       }
       
+      try {
+        // Try to create via backend API first
+        const response = await apiClient.post('/api/students', {
+          fullName: data.fullName,
+          lrn: data.lrn,
+          gradeLevelId: data.gradeLevelId,
+          sectionId: data.sectionId,
+          email: data.email,
+          schoolEmail: data.schoolEmail,
+          password: data.password,
+        });
+        
+        if (response.data?.data) {
+          console.log('🟢 Student created on backend:', response.data.data);
+          // Update local cache
+          const updated = [...students, response.data.data];
+          await saveStudentsMutation.mutateAsync(updated);
+          return response.data.data;
+        }
+      } catch (backendError: any) {
+        console.warn('Backend student creation failed, falling back to local:', backendError);
+      }
+      
+      // Fall back to local-only creation
       const newStudent: Student = {
         ...data,
         id: `student_${Date.now()}`,
@@ -145,9 +203,18 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
       
+      console.log('🟢 Saving new student locally:', newStudent);
       const updated = [...students, newStudent];
       await saveStudentsMutation.mutateAsync(updated);
+      console.log('🟢 Student saved successfully');
       return newStudent;
+    },
+    onSuccess: (newStudent) => {
+      // Update query cache with new student instead of invalidating
+      // This prevents the cache from being cleared when using local-only storage
+      const currentStudents = queryClient.getQueryData<Student[]>(['students']) || [];
+      const updatedStudents = [...currentStudents, newStudent];
+      queryClient.setQueryData(['students'], updatedStudents);
     },
   });
 
@@ -158,6 +225,17 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
       
       if (index === -1) {
         throw new Error('Student not found');
+      }
+      
+      // If email is being updated, sync it with the backend
+      if (updates.email && updates.email !== students[index].email) {
+        try {
+          await apiClient.put(`/api/auth/students/${id}/email`, {
+            newEmail: updates.email,
+          });
+        } catch (backendError) {
+          console.warn('Backend email update failed, updating locally:', backendError);
+        }
       }
       
       const updated = [...students];
@@ -256,6 +334,19 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
   const deleteStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
       const students: Student[] = studentsQuery.data || [];
+      const student = students.find(s => s.id === studentId);
+      
+      if (!student) {
+        throw new Error('Student not found');
+      }
+
+      // Delete from backend
+      try {
+        await apiClient.delete(`/api/auth/${student.id}`);
+      } catch (backendError) {
+        console.warn('Backend delete failed, deleting locally:', backendError);
+      }
+
       const updated = students.filter(s => s.id !== studentId);
       await saveStudentsMutation.mutateAsync(updated);
       return true;
@@ -266,6 +357,35 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
     mutationFn: async ({ studentId, newPassword }: { studentId: string; newPassword: string }) => {
       const students: Student[] = studentsQuery.data || [];
       const index = students.findIndex(s => s.id === studentId);
+      
+      if (index === -1) {
+        throw new Error('Student not found');
+      }
+      
+      const updated = [...students];
+      updated[index] = { ...updated[index], password: newPassword };
+      await saveStudentsMutation.mutateAsync(updated);
+      return true;
+    },
+  });
+
+  const changeStudentPasswordMutation = useMutation({
+    mutationFn: async ({ student, newPassword }: { student: Student; newPassword: string }) => {
+      // Use schoolEmail for backend lookup as it's guaranteed to exist in the database
+      const studentIdentifier = student.schoolEmail || student.id;
+      
+      // Update password on backend
+      try {
+        await apiClient.put(`/api/auth/students/${studentIdentifier}/password`, {
+          newPassword,
+        });
+      } catch (backendError) {
+        console.warn('Backend password update failed, updating locally:', backendError);
+      }
+      
+      // Update locally
+      const students: Student[] = studentsQuery.data || [];
+      const index = students.findIndex(s => s.id === student.id);
       
       if (index === -1) {
         throw new Error('Student not found');
@@ -351,6 +471,8 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
     addViolation: addViolationMutation.mutateAsync,
     deleteStudent: deleteStudentMutation.mutateAsync,
     resetStudentPassword: resetPasswordMutation.mutateAsync,
+    changeStudentPassword: changeStudentPasswordMutation.mutateAsync,
+    changeStudentPasswordMutation,
     deleteGradeLevel: deleteGradeLevelMutation.mutateAsync,
     deleteSection: deleteSectionMutation.mutateAsync,
     

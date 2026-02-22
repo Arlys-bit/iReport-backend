@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -36,21 +37,22 @@ import { STAFF_POSITIONS } from '@/constants/staff';
 const LANGUAGES = [
   { code: 'en', name: 'English' },
   { code: 'fil', name: 'Filipino' },
-  { code: 'ceb', name: 'Cebuano' },
 ] as const;
 
 export default function AdminProfile() {
   const { currentUser, updateCurrentUser, logout } = useAuth();
-  const { updateStaff, changePassword } = useStaff();
+  const { staff, updateStaff, changePassword, changePasswordMutation } = useStaff();
   const { isDark, setTheme, language, setLanguage, colors } = useSettings();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const staffMember = currentUser as StaffMember;
+  // Find the current user in the staff list, fall back to currentUser if not found
+  const staffMember = (staff.find(s => s.id === currentUser?.id) || currentUser) as StaffMember;
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -125,36 +127,42 @@ export default function AdminProfile() {
       return;
     }
 
-    changePassword({
-      staffId: staffMember.id,
-      newPassword,
-      adminId: staffMember.id,
-      adminName: staffMember.fullName,
-    });
-    await updateCurrentUser({ password: newPassword });
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordModal(false);
-    Alert.alert('Success', 'Password changed successfully');
+    try {
+      await changePassword({
+        staffId: staffMember.id,
+        newPassword,
+        adminId: staffMember.id,
+        adminName: staffMember.fullName,
+      });
+      
+      // Update both current user and local reference
+      await updateCurrentUser({ password: newPassword });
+      // Update the local staffMember reference so the next password change works
+      staffMember.password = newPassword;
+      
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordModal(false);
+      Alert.alert('Success', 'Password changed successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to change password');
+      console.error('Password change error:', error);
+    }
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            router.replace('/login');
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    try {
+      await logout();
+      router.replace('/login');
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   };
 
   const getPositionName = (position: string) => {
@@ -380,6 +388,10 @@ export default function AdminProfile() {
       alignItems: 'center',
       marginTop: 8,
     },
+    disabledButton: {
+      backgroundColor: colors.textLight,
+      opacity: 0.5,
+    },
     modalButtonText: {
       fontSize: 16,
       fontWeight: '700' as const,
@@ -421,6 +433,57 @@ export default function AdminProfile() {
     pickerOptionTextSelected: {
       fontWeight: '600' as const,
       color: colors.primary,
+    },
+    logoutModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    logoutModalContent: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+    },
+    logoutModalTitle: {
+      fontSize: 18,
+      fontWeight: '700' as const,
+      color: colors.text,
+      marginBottom: 12,
+    },
+    logoutModalMessage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    logoutModalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'flex-end',
+    },
+    logoutModalButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      minWidth: 100,
+      alignItems: 'center',
+    },
+    cancelButton: {
+      backgroundColor: colors.border,
+    },
+    cancelButtonText: {
+      color: colors.text,
+      fontWeight: '600' as const,
+    },
+    logoutConfirmButton: {
+      backgroundColor: colors.error,
+    },
+    logoutConfirmButtonText: {
+      color: colors.surface,
+      fontWeight: '600' as const,
     },
   });
 
@@ -583,8 +646,16 @@ export default function AdminProfile() {
                 secureTextEntry
               />
             </View>
-            <TouchableOpacity style={dynamicStyles.modalButton} onPress={handleChangePassword}>
-              <Text style={dynamicStyles.modalButtonText}>Change Password</Text>
+            <TouchableOpacity 
+              style={[dynamicStyles.modalButton, changePasswordMutation?.isPending && dynamicStyles.disabledButton]} 
+              onPress={handleChangePassword}
+              disabled={changePasswordMutation?.isPending}
+            >
+              {changePasswordMutation?.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={dynamicStyles.modalButtonText}>Change Password</Text>
+              )}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -622,6 +693,29 @@ export default function AdminProfile() {
             ))}
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={showLogoutModal} transparent animationType="fade">
+        <View style={dynamicStyles.logoutModalOverlay}>
+          <View style={dynamicStyles.logoutModalContent}>
+            <Text style={dynamicStyles.logoutModalTitle}>Logout</Text>
+            <Text style={dynamicStyles.logoutModalMessage}>Are you sure you want to logout?</Text>
+            <View style={dynamicStyles.logoutModalButtons}>
+              <TouchableOpacity
+                style={[dynamicStyles.logoutModalButton, dynamicStyles.cancelButton]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={dynamicStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[dynamicStyles.logoutModalButton, dynamicStyles.logoutConfirmButton]}
+                onPress={confirmLogout}
+              >
+                <Text style={dynamicStyles.logoutConfirmButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

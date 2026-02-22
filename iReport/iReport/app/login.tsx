@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,13 +23,17 @@ export default function LoginScreen() {
   const router = useRouter();
   const { currentUser, login, isLoggingIn, loginError } = useAuth();
   const { colors, isDark } = useSettings();
+  const hasRedirected = useRef(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    if (currentUser) {
-      router.replace('/selector');
+    if (currentUser && !hasRedirected.current) {
+      hasRedirected.current = true;
+      setTimeout(() => {
+        router.replace('/selector');
+      }, 100);
     }
   }, [currentUser, router]);
 

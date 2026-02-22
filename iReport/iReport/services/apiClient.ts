@@ -2,8 +2,8 @@ import axios, { AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Production URL: https://ireport-backend-production.up.railway.app
-// For local development: http://localhost:5001
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+// For local development: http://localhost:5000
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://ireport-backend-production.up.railway.app';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -28,11 +28,14 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      await AsyncStorage.removeItem('school_auth_token');
-      await AsyncStorage.removeItem('school_current_user');
-      // Could trigger a logout action here
-      console.error('Token invalid, user should re-login');
+      // Don't logout on password change endpoints - let the app handle it
+      const url = error.config?.url || '';
+      if (!url.includes('/password')) {
+        // Token expired or invalid - logout user
+        await AsyncStorage.removeItem('school_auth_token');
+        await AsyncStorage.removeItem('school_current_user');
+        console.error('Token invalid, user should re-login');
+      }
     }
     return Promise.reject(error);
   }

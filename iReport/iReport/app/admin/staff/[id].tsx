@@ -46,7 +46,7 @@ import colors from '@/constants/colors';
 
 export default function StaffProfile() {
   const { id } = useLocalSearchParams();
-  const { staff, updateStaff, updatePermissions, changePassword, deleteStaff, isUpdating } = useStaff();
+  const { staff, updateStaff, updatePermissions, changePassword, changePasswordMutation, deleteStaff, isUpdating } = useStaff();
   const { gradeLevels, sections } = useStudents();
   
   const staffMember = useMemo(() => {
@@ -178,7 +178,7 @@ export default function StaffProfile() {
     Alert.alert('Success', 'Profile photo removed');
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -194,17 +194,22 @@ export default function StaffProfile() {
       return;
     }
 
-    changePassword({
-      staffId: staffMember.id,
-      newPassword,
-      adminId: 'admin',
-      adminName: 'System Admin',
-    });
-
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordModal(false);
-    Alert.alert('Success', 'Password changed successfully');
+    try {
+      await changePassword({
+        staffId: staffMember.id,
+        newPassword,
+        adminId: 'admin',
+        adminName: 'System Admin',
+      });
+      
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordModal(false);
+      Alert.alert('Success', 'Password changed successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to change password');
+      console.error('Password change error:', error);
+    }
   };
 
   const handleUpdatePermissions = () => {
@@ -518,20 +523,6 @@ export default function StaffProfile() {
             <Text style={styles.sectionTitle}>Teacher Settings</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Account Email</Text>
-              <Text style={styles.infoValue}>{staffMember.schoolEmail}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Password</Text>
-              <Text style={styles.infoValue}>••••••••</Text>
-            </View>
-          </View>
-
           <TouchableOpacity
             style={styles.changePasswordButton}
             onPress={() => setShowPasswordModal(true)}
@@ -590,10 +581,15 @@ export default function StaffProfile() {
             </View>
 
             <TouchableOpacity
-              style={styles.modalButton}
+              style={[styles.modalButton, changePasswordMutation?.isPending && styles.disabledButton]}
               onPress={handleChangePassword}
+              disabled={changePasswordMutation?.isPending}
             >
-              <Text style={styles.modalButtonText}>Change Password</Text>
+              {changePasswordMutation?.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.modalButtonText}>Change Password</Text>
+              )}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -1152,6 +1148,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 24,
+  },
+  disabledButton: {
+    backgroundColor: colors.textLight,
+    opacity: 0.5,
   },
   modalButtonText: {
     fontSize: 16,

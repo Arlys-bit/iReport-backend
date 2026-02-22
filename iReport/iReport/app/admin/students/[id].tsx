@@ -39,7 +39,7 @@ import colors from '@/constants/colors';
 export default function StudentProfile() {
   const { id } = useLocalSearchParams();
   const { currentUser, checkPermission, isAdmin } = useAuth();
-  const { students, gradeLevels, sections, updateStudent, promoteStudent, transferStudent, deleteStudent, resetStudentPassword, isUpdating } = useStudents();
+  const { students, gradeLevels, sections, updateStudent, promoteStudent, transferStudent, deleteStudent, resetStudentPassword, changeStudentPassword, isUpdating } = useStudents();
   const { staff } = useStaff();
   const { reports } = useReports();
 
@@ -160,7 +160,7 @@ export default function StudentProfile() {
     }
 
     try {
-      await resetStudentPassword({ studentId: student.id, newPassword });
+      await changeStudentPassword({ student, newPassword });
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordModal(false);

@@ -34,7 +34,8 @@ export const CLUSTER_ROLES: { key: ClusterRole; name: string }[] = [
 ];
 
 export const STAFF_PERMISSIONS: { key: StaffPermission; name: string; description: string }[] = [
-  { key: 'edit_students', name: 'Edit Students', description: 'Can edit student information' },
+  { key: 'edit_students', name: 'Edit Assigned Students', description: 'Can edit student information in assigned sections/grades' },
+  { key: 'edit_any_student', name: 'Edit Any Student', description: 'Can edit any student information (requires admin review)' },
   { key: 'assign_grades_sections', name: 'Assign Grades & Sections', description: 'Can assign grade levels and sections' },
   { key: 'create_grades_sections', name: 'Create Grades & Sections', description: 'Can create new grade levels and sections' },
   { key: 'promote_transfer_students', name: 'Promote/Transfer Students', description: 'Can promote or transfer students' },
@@ -42,6 +43,7 @@ export const STAFF_PERMISSIONS: { key: StaffPermission; name: string; descriptio
   { key: 'manage_reports', name: 'Manage Reports', description: 'Can manage incident reports' },
   { key: 'access_sensitive_data', name: 'Access Sensitive Data', description: 'Can access sensitive information' },
   { key: 'manage_permissions', name: 'Manage Permissions', description: 'Can manage staff permissions' },
+  { key: 'manage_staff_accounts', name: 'Manage Staff Accounts', description: 'Can change passwords and permissions for other staff' },
   { key: 'view_all_reports', name: 'View All Reports', description: 'Can view all incident reports' },
   { key: 'remove_students', name: 'Remove Students', description: 'Can permanently remove students' },
 ];

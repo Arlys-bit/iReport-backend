@@ -28,22 +28,74 @@ export const seedDatabase = async () => {
         'view_all_reports',
         'create_grades_sections',
         'remove_students',
-        'manage_buildings'
+        'manage_buildings',
+        'manage_staff_accounts'
       ];
       await query(
-        `INSERT INTO staff_members (user_id, staff_id, position, school_email, permissions)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO staff_members (user_id, staff_id, position, school_email, specialization, rank, permissions)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (staff_id) DO NOTHING`,
         [
           adminUserId,
           'ADMIN001',
           'principal',
           'admin@school.edu',
+          'administration',
+          'senior_admin',
           permissions
         ]
       );
-      console.log('✓ Created admin user');
+      console.log('✅ Created admin user: admin@school.edu / admin123');
     }
+
+    // Create test teacher
+    const teacherPassword = await bcrypt.hash('teacher123', 10);
+    const teacherResult = await query(
+      `INSERT INTO users (role, full_name, email, password, is_active)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id`,
+      ['teacher', 'Test Teacher', 'teacher@school.edu', teacherPassword, true]
+    );
+
+    if (teacherResult.rows.length > 0) {
+      const teacherUserId = teacherResult.rows[0].id;
+      const teacherPermissions = [
+        'edit_students',
+        'assign_grades_sections',
+        'manage_staff_accounts'
+      ];
+      await query(
+        `INSERT INTO staff_members (user_id, staff_id, position, school_email, specialization, rank, permissions)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (staff_id) DO NOTHING`,
+        [
+          teacherUserId,
+          'TEACHER001',
+          'teacher',
+          'teacher@school.edu',
+          'Mathematics',
+          'senior_teacher',
+          teacherPermissions
+        ]
+      );
+      console.log('✅ Created teacher user: teacher@school.edu / teacher123');
+    }
+
+    // Create test student
+    const studentPassword = await bcrypt.hash('student123', 10);
+    const studentResult = await query(
+      `INSERT INTO users (role, full_name, email, password, is_active)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id`,
+      ['student', 'Test Student', 'student@school.edu', studentPassword, true]
+    );
+
+    if (studentResult.rows.length > 0) {
+      console.log('✅ Created student user: student@school.edu / student123');
+    }
+
 
     // Create grade levels
     const grades = [

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,17 @@ export default function SelectorScreen() {
   const router = useRouter();
   const { currentUser } = useAuth();
   const { colors } = useSettings();
+  const hasChecked = useRef(false);
+
   useEffect(() => {
     // If no logged-in user, send to login — disallow guest dashboard
-    if (!currentUser) {
-      router.replace('/login');
+    if (!hasChecked.current) {
+      hasChecked.current = true;
+      if (!currentUser) {
+        setTimeout(() => {
+          router.replace('/login');
+        }, 100);
+      }
     }
   }, [currentUser, router]);
   const getFriendlyRole = (role?: string) => {

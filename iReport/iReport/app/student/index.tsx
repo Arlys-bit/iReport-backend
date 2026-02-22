@@ -37,8 +37,8 @@ export default function StudentDashboard() {
   const currentGrade = gradeLevels.find(g => g.id === student?.gradeLevelId);
   const currentSection = sections.find(s => s.id === student?.sectionId);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.replace('/login');
   };
 
@@ -63,7 +63,16 @@ export default function StudentDashboard() {
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={() => router.back()}>
+        <TouchableOpacity 
+          style={styles.logoutButton} 
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/selector');
+            }
+          }}
+        >
           <ChevronLeft size={20} color={colors.text} />
         </TouchableOpacity>
       </View>

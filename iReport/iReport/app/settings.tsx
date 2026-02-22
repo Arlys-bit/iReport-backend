@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, useColorScheme } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, useColorScheme, Modal } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -10,28 +10,20 @@ export default function SettingsScreen() {
   const { logout } = useAuth();
   const { isDark, colors, theme, setTheme, t } = useSettings();
   const systemColorScheme = useColorScheme();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          onPress: () => {},
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          onPress: () => {
-            logout();
-            router.replace('/login');
-          },
-          style: 'destructive',
-        },
-      ],
-      { cancelable: false }
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    try {
+      await logout();
+      router.replace('/login');
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   };
 
   const toggleDarkMode = () => {
@@ -112,6 +104,29 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal visible={showLogoutModal} transparent animationType="fade">
+        <View style={[styles.logoutModalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+          <View style={[styles.logoutModalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.logoutModalTitle, { color: colors.text }]}>Logout</Text>
+            <Text style={[styles.logoutModalMessage, { color: colors.textSecondary }]}>Are you sure you want to logout?</Text>
+            <View style={styles.logoutModalButtons}>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, { backgroundColor: colors.border }]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, { backgroundColor: colors.error }]}
+                onPress={confirmLogout}
+              >
+                <Text style={[styles.logoutConfirmButtonText, { color: colors.surface }]}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -185,6 +200,45 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  logoutModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  logoutModalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  logoutModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  logoutModalMessage: {
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  logoutModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  logoutModalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontWeight: '600',
+  },
+  logoutConfirmButtonText: {
     fontWeight: '600',
   },
 });

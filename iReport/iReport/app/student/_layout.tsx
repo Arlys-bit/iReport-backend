@@ -20,7 +20,7 @@ export default function StudentLayout() {
       <Stack.Screen 
         name="reports" 
         options={{ 
-          headerShown: false,
+          headerShown: true,
         }} 
       />
     </Stack>

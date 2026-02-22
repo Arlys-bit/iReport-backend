@@ -49,34 +49,42 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
 
   const createReportMutation = useMutation({
     mutationFn: async (report: Omit<IncidentReport, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'priority' | 'reviewHistory'>) => {
-      const reports: IncidentReport[] = reportsQuery.data || [];
-      
-      const priority = report.incidentType === 'physical_assault' || report.incidentType === 'fighting' 
-        ? 'urgent' 
-        : report.incidentType === 'bullying' || report.incidentType === 'harassment'
-        ? 'high'
-        : 'medium';
+      let newReport: IncidentReport;
+      try {
+        console.log('📝 Creating report:', report);
+        const reports: IncidentReport[] = reportsQuery.data || [];
+        
+        const priority = report.incidentType === 'physical_assault' || report.incidentType === 'fighting' 
+          ? 'urgent' 
+          : report.incidentType === 'bullying' || report.incidentType === 'harassment'
+          ? 'high'
+          : 'medium';
 
-      const reviewHistory: ReportReviewHistory[] = [{
-        id: `review_${Date.now()}`,
-        reviewerId: report.reporterId,
-        reviewerName: report.reporterName,
-        action: 'submitted',
-        timestamp: new Date().toISOString(),
-      }];
+        const reviewHistory: ReportReviewHistory[] = [{
+          id: `review_${Date.now()}`,
+          reviewerId: report.reporterId,
+          reviewerName: report.reporterName,
+          action: 'submitted',
+          timestamp: new Date().toISOString(),
+        }];
 
-      const newReport: IncidentReport = {
-        ...report,
-        id: `report_${Date.now()}`,
-        status: 'under_review',
-        priority,
-        reviewHistory,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        newReport = {
+          ...report,
+          id: `report_${Date.now()}`,
+          status: 'under_review',
+          priority,
+          reviewHistory,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
 
-      const updatedReports = [...reports, newReport];
-      await saveReportsMutation.mutateAsync(updatedReports);
+        const updatedReports = [...reports, newReport];
+        await saveReportsMutation.mutateAsync(updatedReports);
+        console.log('✅ Report created successfully:', newReport);
+      } catch (error) {
+        console.error('❌ Error creating report:', error);
+        throw error;
+      }
 
       if (report.assignedTeacherId) {
         await createNotification({

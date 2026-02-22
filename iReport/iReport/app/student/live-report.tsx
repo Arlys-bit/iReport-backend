@@ -27,13 +27,13 @@ export default function StudentLiveReportScreen() {
 
   const [selectedBuilding, setSelectedBuilding] = useState('');
   const [selectedFloor, setSelectedFloor] = useState('');
-  const [selectedRoom, setSelectedRoom] = useState('');
+  const [selectedSection, setSelectedSection] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [description, setDescription] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [showBuildingPicker, setShowBuildingPicker] = useState(false);
   const [showFloorPicker, setShowFloorPicker] = useState(false);
-  const [showRoomPicker, setShowRoomPicker] = useState(false);
 
   const selectedBuildingData = useMemo(() => {
     return activeBuildings.find(b => b.id === selectedBuilding);
@@ -44,39 +44,61 @@ export default function StudentLiveReportScreen() {
     return getFloorsForBuilding(selectedBuilding);
   }, [selectedBuilding, getFloorsForBuilding]);
 
-  const rooms = useMemo(() => {
-    return Array.from({ length: 15 }, (_, i) => String(i + 1).padStart(2, '0'));
-  }, []);
+
 
   const handleBuildingSelect = (buildingId: string) => {
     setSelectedBuilding(buildingId);
     setSelectedFloor('');
-    setSelectedRoom('');
+    setSelectedSection('');
     setShowBuildingPicker(false);
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    Alert.alert(
+      'Alert Sent!',
+      'Your live incident report has been sent to all available staff members. Help is on the way.',
+      [{ text: 'OK', onPress: () => router.back() }]
+    );
+  };
+
   const handleSubmit = async () => {
+    console.log('🔴 Submit button pressed');
+    console.log('Student:', student);
+    console.log('createIncident function:', createIncident);
+    
     if (!student) {
+      console.log('❌ No student');
       Alert.alert('Error', 'You must be logged in as a student');
       return;
     }
 
     if (!selectedBuilding || !selectedFloor) {
+      console.log('❌ Building or floor not selected');
       Alert.alert('Required', 'Please select building and floor');
       return;
     }
 
     if (!selectedType) {
+      console.log('❌ Incident type not selected');
       Alert.alert('Required', 'Please select incident type');
       return;
     }
 
     if (!description.trim() || description.trim().length < 5) {
+      console.log('❌ Description too short');
       Alert.alert('Required', 'Please provide a brief description (at least 5 characters)');
       return;
     }
 
+    if (!createIncident) {
+      console.log('❌ createIncident function not available');
+      Alert.alert('Error', 'Unable to create incident. Please try again.');
+      return;
+    }
+
     try {
+      console.log('📝 Creating incident...');
       await createIncident({
         reporterId: student.id,
         reporterName: student.fullName,
@@ -85,18 +107,15 @@ export default function StudentLiveReportScreen() {
         buildingId: selectedBuilding,
         buildingName: selectedBuildingData?.name || selectedBuilding,
         floor: selectedFloor,
-        room: selectedRoom || 'N/A',
+        room: selectedSection || 'N/A',
         incidentType: selectedType,
         description: description.trim(),
       });
 
-      Alert.alert(
-        'Alert Sent!',
-        'Your live incident report has been sent to all available staff members. Help is on the way.',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      console.log('✅ Incident created successfully');
+      setShowSuccess(true);
     } catch (error) {
-      console.log('Error creating live incident:', error);
+      console.log('❌ Error creating live incident:', error);
       Alert.alert('Error', 'Failed to send alert. Please try again.');
     }
   };
@@ -130,7 +149,6 @@ export default function StudentLiveReportScreen() {
               onPress={() => {
                 setShowBuildingPicker(!showBuildingPicker);
                 setShowFloorPicker(false);
-                setShowRoomPicker(false);
               }}
             >
               <Text style={[styles.pickerText, !selectedBuilding && styles.placeholderText]}>
@@ -166,7 +184,6 @@ export default function StudentLiveReportScreen() {
                   if (!selectedBuilding) return;
                   setShowFloorPicker(!showFloorPicker);
                   setShowBuildingPicker(false);
-                  setShowRoomPicker(false);
                 }}
                 disabled={!selectedBuilding}
               >
@@ -197,50 +214,15 @@ export default function StudentLiveReportScreen() {
             </View>
 
             <View style={[styles.pickerContainer, { flex: 1 }]}>
-              <Text style={styles.label}>Room</Text>
-              <TouchableOpacity
-                style={[styles.pickerButton, !selectedFloor && styles.pickerDisabled]}
-                onPress={() => {
-                  if (!selectedFloor) return;
-                  setShowRoomPicker(!showRoomPicker);
-                  setShowBuildingPicker(false);
-                  setShowFloorPicker(false);
-                }}
-                disabled={!selectedFloor}
-              >
-                <Text style={[styles.pickerText, !selectedRoom && styles.placeholderText]}>
-                  {selectedRoom ? `Room ${selectedRoom}` : 'Optional'}
-                </Text>
-                <ChevronDown size={20} color="#6B7280" />
-              </TouchableOpacity>
-              {showRoomPicker && (
-                <View style={styles.dropdownMenu}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedRoom('');
-                      setShowRoomPicker(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Hallway / Common Area</Text>
-                  </TouchableOpacity>
-                  {rooms.map(room => (
-                    <TouchableOpacity
-                      key={room}
-                      style={[
-                        styles.dropdownItem,
-                        selectedRoom === room && styles.dropdownItemSelected
-                      ]}
-                      onPress={() => {
-                        setSelectedRoom(room);
-                        setShowRoomPicker(false);
-                      }}
-                    >
-                      <Text style={styles.dropdownText}>Room {room}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+              <Text style={styles.label}>Section</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter section (optional)"
+                placeholderTextColor="#9CA3AF"
+                value={selectedSection}
+                onChangeText={setSelectedSection}
+                editable={!!selectedFloor}
+              />
             </View>
           </View>
         </View>
@@ -305,6 +287,22 @@ export default function StudentLiveReportScreen() {
           Only use for real emergencies happening right now.
         </Text>
       </ScrollView>
+
+      {showSuccess && (
+        <View style={styles.successOverlay}>
+          <View style={styles.successBox}>
+            <Text style={styles.successEmoji}>✓</Text>
+            <Text style={styles.successTitle}>Alert Sent!</Text>
+            <Text style={styles.successMessage}>Your live incident report has been sent to all available staff members. Help is on the way.</Text>
+            <TouchableOpacity
+              style={styles.successButton}
+              onPress={handleSuccessClose}
+            >
+              <Text style={styles.successButtonText}>Got It</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -384,6 +382,16 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#9CA3AF',
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    fontSize: 15,
+    color: '#111827',
   },
   rowContainer: {
     flexDirection: 'row',
@@ -505,5 +513,57 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 18,
     paddingHorizontal: 16,
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  successBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 40,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  successEmoji: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#111827',
+    marginBottom: 8,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  successButton: {
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    minWidth: 120,
+  },
+  successButtonText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });

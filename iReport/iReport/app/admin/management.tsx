@@ -174,23 +174,30 @@ export default function ManagementPage() {
   };
 
   const handleCreateStudent = async () => {
+    console.log('🔵 handleCreateStudent called');
+    console.log('🔵 studentForm:', studentForm);
+    
     if (!studentForm.fullName.trim() || !studentForm.lrn.trim() || !studentForm.gradeLevelId || 
         !studentForm.sectionId || !studentForm.email.trim() || !studentForm.password.trim()) {
+      console.log('🔵 Validation failed');
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
     
     if (studentForm.password !== studentForm.confirmPassword) {
+      console.log('🔵 Passwords do not match');
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
     
     if (studentForm.password.length < 6) {
+      console.log('🔵 Password too short');
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
     try {
+      console.log('🔵 Calling createStudent with:', studentForm);
       await createStudent({
         fullName: studentForm.fullName.trim(),
         lrn: studentForm.lrn.trim(),
@@ -202,6 +209,7 @@ export default function ManagementPage() {
         profilePhoto: studentForm.profilePhoto,
       });
       
+      console.log('🔵 Student created successfully');
       setStudentForm({
         fullName: '',
         lrn: '',
@@ -215,27 +223,35 @@ export default function ManagementPage() {
       setShowStudentModal(false);
       Alert.alert('Success', 'Student created successfully');
     } catch (error: any) {
+      console.log('🔵 Error creating student:', error);
       Alert.alert('Error', error.message || 'Failed to create student');
     }
   };
 
   const handleCreateStaff = async () => {
+    console.log('🟣 handleCreateStaff called');
+    console.log('🟣 staffForm:', staffForm);
+    
     if (!staffForm.fullName.trim() || !staffForm.staffId.trim() || !staffForm.schoolEmail.trim() || !staffForm.password.trim()) {
+      console.log('🟣 Validation failed - missing required fields');
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
     
     if (staffForm.password !== staffForm.confirmPassword) {
+      console.log('🟣 Passwords do not match');
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
     
     if (staffForm.password.length < 6) {
+      console.log('🟣 Password too short');
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
     try {
+      console.log('🟣 Calling createStaff with:', staffForm);
       await createStaff({
         fullName: staffForm.fullName.trim(),
         staffId: staffForm.staffId.trim(),
@@ -250,6 +266,7 @@ export default function ManagementPage() {
         permissions: staffForm.permissions,
       });
       
+      console.log('🟣 Staff created successfully');
       setStaffForm({
         fullName: '',
         staffId: '',
@@ -267,6 +284,7 @@ export default function ManagementPage() {
       setShowStaffModal(false);
       Alert.alert('Success', 'Staff member created successfully');
     } catch (error: any) {
+      console.log('🟣 Error creating staff:', error);
       Alert.alert('Error', error.message || 'Failed to create staff');
     }
   };

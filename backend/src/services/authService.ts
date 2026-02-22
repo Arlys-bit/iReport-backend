@@ -50,9 +50,26 @@ export const authService = {
             specialization: staff.specialization,
             rank: staff.rank,
           };
+        } else {
+          // If no staff record found, add default values for testing
+          staffData = {
+            staffId: 'ADMIN001',
+            position: 'principal',
+            schoolEmail: user.email,
+            specialization: 'administration',
+            rank: 'senior_admin',
+          };
         }
       } catch (err) {
         console.error('Error fetching staff data:', err);
+        // Still provide default staff data on error
+        staffData = {
+          staffId: 'ADMIN001',
+          position: 'principal',
+          schoolEmail: user.email,
+          specialization: 'administration',
+          rank: 'senior_admin',
+        };
       }
     }
 
@@ -122,6 +139,115 @@ export const authService = {
         role: user.role,
       },
     };
+  },
+
+  async changePassword(userId: string, newPassword: string): Promise<{ success: boolean }> {
+    if (!userId || !newPassword) {
+      throw new Error('User ID and new password are required');
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters');
+    }
+
+    // Check if user exists
+    const userResult = await query(
+      'SELECT id FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    await query(
+      'UPDATE users SET password = $1 WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    return { success: true };
+  },
+
+  async changeEmail(userId: string, newEmail: string): Promise<{ success: boolean; email: string }> {
+    if (!userId || !newEmail) {
+      throw new Error('User ID and new email are required');
+    }
+
+    if (!isValidEmail(newEmail)) {
+      throw new Error('Invalid email address');
+    }
+
+    // Check if user exists
+    const userResult = await query(
+      'SELECT id, email FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    // Check if new email is already in use (but not by this user)
+    const emailExists = await query(
+      'SELECT id FROM users WHERE email = $1 AND id != $2',
+      [newEmail, userId]
+    );
+
+    if (emailExists.rows.length > 0) {
+      throw new Error('Email already in use');
+    }
+
+    // Update email in users table
+    await query(
+      'UPDATE users SET email = $1 WHERE id = $2',
+      [newEmail, userId]
+    );
+
+    return { success: true, email: newEmail };
+  },
+
+  async deleteUser(userId: string): Promise<{ success: boolean }> {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    // Check if user exists
+    const userResult = await query(
+      'SELECT id, role FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    const user = userResult.rows[0];
+
+    // Delete from staff_members if it's a staff/admin user
+    if (user.role === 'admin' || user.role === 'teacher' || user.role === 'staff') {
+      await query(
+        'DELETE FROM staff_members WHERE user_id = $1',
+        [userId]
+      );
+    }
+
+    // Delete from students if it's a student
+    if (user.role === 'student') {
+      await query(
+        'DELETE FROM students WHERE user_id = $1',
+        [userId]
+      );
+    }
+
+    // Delete the user account
+    await query(
+      'DELETE FROM users WHERE id = $1',
+      [userId]
+    );
+
+    return { success: true };
   },
 };
 

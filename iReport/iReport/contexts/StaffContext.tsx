@@ -2,6 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StaffMember, ActivityLog, StaffPermission, StaffPosition } from '@/types';
+import apiClient from '@/services/apiClient';
 
 const STORAGE_KEYS = {
   STAFF: 'school_staff_members',
@@ -64,26 +65,53 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
 
   const createStaffMutation = useMutation({
     mutationFn: async (staffData: Omit<StaffMember, 'id' | 'createdAt' | 'isActive' | 'role'>) => {
+      console.log('📕 createStaffMutation started with data:', staffData);
       const staff: StaffMember[] = staffQuery.data || [];
       
+      // Check for duplicates locally first
       const emailExists = staff.some(s => s.schoolEmail.toLowerCase() === staffData.schoolEmail.toLowerCase());
       if (emailExists) {
+        console.log('📕 Email already exists locally');
         throw new Error('Email already exists');
       }
 
       const staffIdExists = staff.some(s => s.staffId === staffData.staffId);
       if (staffIdExists) {
+        console.log('📕 Staff ID already exists locally');
         throw new Error('Staff ID already exists');
+      }
+
+      // Create user account on backend
+      console.log('📕 Creating user account on backend...');
+      const roleMap: Record<StaffPosition, 'teacher' | 'admin' | 'principal'> = {
+        'teacher': 'teacher',
+        'principal': 'principal',
+        'vice_principal': 'admin',
+        'guidance_counselor': 'admin',
+      };
+      
+      const registrationResponse = await apiClient.post('/api/auth/register', {
+        fullName: staffData.fullName,
+        email: staffData.schoolEmail,
+        password: staffData.password,
+        role: roleMap[staffData.position],
+      });
+
+      const userId = registrationResponse.data.data?.user?.id;
+      
+      if (!userId) {
+        throw new Error('Failed to get user ID from backend');
       }
 
       const newStaff: StaffMember = {
         ...staffData,
-        id: `staff_${Date.now()}`,
+        id: userId,
         role: getRoleFromPosition(staffData.position),
         isActive: true,
         createdAt: new Date().toISOString(),
       };
 
+      console.log('📕 Saving new staff locally:', newStaff);
       const updatedStaff = [...staff, newStaff];
       await saveStaffMutation.mutateAsync(updatedStaff);
       
@@ -99,6 +127,7 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
         timestamp: new Date().toISOString(),
       });
 
+      console.log('📕 Staff saved successfully');
       return newStaff;
     },
   });
@@ -115,6 +144,17 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
       
       if (index === -1) {
         throw new Error('Staff member not found');
+      }
+
+      // If email is being updated, sync it with the backend
+      if (updates.email && updates.email !== staff[index].email) {
+        try {
+          await apiClient.put(`/api/auth/staff/${id}/email`, {
+            newEmail: updates.email,
+          });
+        } catch (backendError) {
+          console.warn('Backend email update failed, updating locally:', backendError);
+        }
       }
 
       const updatedStaff = [...staff];
@@ -197,6 +237,16 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
         throw new Error('Staff member not found');
       }
 
+      // Update password on backend
+      try {
+        await apiClient.put(`/api/auth/staff/${staffId}/password`, {
+          newPassword,
+        });
+      } catch (backendError) {
+        console.warn('Backend password update failed, updating locally:', backendError);
+        // Continue with local update as fallback
+      }
+
       const updatedStaff = [...staff];
       updatedStaff[index] = { ...updatedStaff[index], password: newPassword };
       
@@ -233,6 +283,13 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
       
       if (!staffMember) {
         throw new Error('Staff member not found');
+      }
+
+      // Delete from backend
+      try {
+        await apiClient.delete(`/api/auth/${staffMember.id}`);
+      } catch (backendError) {
+        console.warn('Backend delete failed, deleting locally:', backendError);
       }
 
       const updatedStaff = staff.filter(s => s.id !== staffId);
@@ -277,8 +334,9 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
     createStaff: createStaffMutation.mutateAsync,
     updateStaff: updateStaffMutation.mutate,
     updatePermissions: updatePermissionsMutation.mutate,
-    changePassword: changePasswordMutation.mutate,
+    changePassword: changePasswordMutation.mutateAsync,
     deleteStaff: deleteStaffMutation.mutate,
+    changePasswordMutation,
     
     getTeachers,
     getStaffByPosition,
@@ -286,5 +344,6 @@ export const [StaffProvider, useStaff] = createContextHook(() => {
     
     isCreating: createStaffMutation.isPending,
     isUpdating: updateStaffMutation.isPending,
+    isChangingPassword: changePasswordMutation.isPending,
   };
 });

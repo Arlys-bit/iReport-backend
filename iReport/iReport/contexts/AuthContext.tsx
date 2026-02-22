@@ -119,6 +119,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       setError(null);
     } catch (err) {
       console.error('Logout error:', err);
+      // Still clear currentUser on error to ensure logout happens
+      setCurrentUser(null);
     }
   };
 
@@ -134,18 +136,24 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         role: 'student',
       });
 
+      console.log('🔴 User created, response:', response.data);
+
       // Also create student record with LRN
       if (response.data.data?.user?.id) {
+        console.log('🔴 Creating student record with LRN:', data.lrn);
         await apiClient.post('/api/students', {
           userId: response.data.data.user.id,
           lrn: data.lrn,
         });
+        console.log('🔴 Student record created');
       }
 
       callbacks?.onSuccess?.();
       return { success: true };
     } catch (err: any) {
-      const errorMsg = err.response?.data?.error || 'Failed to create student';
+      console.error('🔴 createStudent error:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to create student';
+      console.log('🔴 Calling onError callback with:', errorMsg);
       callbacks?.onError?.(new Error(errorMsg));
       return { success: false, error: errorMsg };
     }
