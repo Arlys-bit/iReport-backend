@@ -53,35 +53,12 @@ const initializeAndStart = async () => {
     console.log('Starting iReport Backend...');
     console.log('Environment:', config.env);
     console.log('Port:', config.port);
-    console.log('Database URL set:', !!process.env.DATABASE_URL);
     
-    // Start server first, then initialize database in background
+    // Start server first, no database initialization
     httpServer.listen(config.port, '0.0.0.0', () => {
-      console.log(`
-╭─────────────────────────────────────╮
-│   iReport Backend API is Running    │
-├─────────────────────────────────────┤
-│   🌐 Server: http://0.0.0.0:${config.port}        │
-│   📡 WebSocket: ws://0.0.0.0:${config.port}        │
-│   🗄️  Database: ${config.database.name}           │
-│   🔐 JWT Secret: ${config.jwt.secret.substring(0, 10)}...    │
-╰─────────────────────────────────────╯
-      `);
+      console.log('iReport Backend API is Running on port ' + config.port);
     });
 
-    // Initialize database in background (non-blocking)
-    if (!process.env.DATABASE_URL) {
-      console.warn('⚠️  DATABASE_URL not set, skipping migrations');
-    } else {
-      console.log('🔧 Initializing database in background...');
-      try {
-        await runMigrations();
-        await seedDatabase();
-        console.log('✅ Database initialized');
-      } catch (dbError) {
-        console.error('⚠️  Database initialization error (non-blocking):', dbError);
-      }
-    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
