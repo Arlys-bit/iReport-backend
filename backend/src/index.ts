@@ -1,40 +1,29 @@
-console.log('STARTUP: BEGIN');
+#!/usr/bin/env node
 
-import express from 'express';
-import { createServer } from 'http';
+// Log immediately before any imports
+console.log('[INSTANT] App starting');
 
-console.log('STARTUP: Imports done');
+const express = require('express');
+const { createServer } = require('http');
+
+console.log('[INSTANT] Imports complete');
 
 const app = express();
 const httpServer = createServer(app);
 
-console.log('STARTUP: Server created');
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
+app.get('/health', (req: any, res: any) => {
+  res.json({ status: 'ok' });
 });
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-const server = httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`STARTUP: COMPLETE - listening on port ${PORT}`);
+const server = httpServer.listen(PORT, () => {
+  console.log(`[INSTANT] Server listening on ${PORT}`);
 });
 
 process.on('SIGTERM', () => {
-  console.log('SIGNAL: SIGTERM - exiting');
+  console.log('[INSTANT] SIGTERM received');
   server.close(() => process.exit(0));
 });
 
-process.on('SIGINT', () => {
-  console.log('SIGNAL: SIGINT - exiting');
-  server.close(() => process.exit(0));
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('ERROR: Uncaught exception:', err);
-  process.exit(1);
-});
-
-console.log('STARTUP: Ready for requests');
-
-export default app;
+module.exports = app;
