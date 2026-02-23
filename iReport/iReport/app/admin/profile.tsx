@@ -525,7 +525,7 @@ export default function AdminProfile() {
             </View>
             <View style={dynamicStyles.infoContent}>
               <Text style={dynamicStyles.infoLabel}>Staff ID</Text>
-              <Text style={dynamicStyles.infoValue}>{staffMember.staffId}</Text>
+              <Text style={dynamicStyles.infoValue}>{staffMember?.staffId || staffMember?.id || 'N/A'}</Text>
             </View>
           </View>
 
@@ -535,7 +535,7 @@ export default function AdminProfile() {
             </View>
             <View style={dynamicStyles.infoContent}>
               <Text style={dynamicStyles.infoLabel}>School Email</Text>
-              <Text style={dynamicStyles.infoValue}>{staffMember.schoolEmail}</Text>
+              <Text style={dynamicStyles.infoValue}>{staffMember?.schoolEmail || staffMember?.email || 'N/A'}</Text>
             </View>
           </View>
 
@@ -545,7 +545,7 @@ export default function AdminProfile() {
             </View>
             <View style={dynamicStyles.infoContent}>
               <Text style={dynamicStyles.infoLabel}>Position</Text>
-              <Text style={dynamicStyles.infoValue}>{getPositionName(staffMember.position)}</Text>
+              <Text style={dynamicStyles.infoValue}>{staffMember?.position ? getPositionName(staffMember.position) : 'N/A'}</Text>
             </View>
           </View>
         </View>

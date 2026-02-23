@@ -52,7 +52,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         password,
       });
 
-      const { token, user } = response.data.data;
+      const { token, user: backendUser } = response.data.data;
+
+      // Ensure user object has all required fields
+      const user = {
+        password: password,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+        permissions: backendUser.role === 'admin' ? ['view_all_reports', 'manage_reports', 'manage_staff_accounts'] : ['view_all_reports', 'manage_reports'],
+        ...backendUser,
+      };
 
       // Store token and user
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
