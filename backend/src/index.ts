@@ -168,18 +168,17 @@ app.post('/auth/login', (req, res) => {
   });
 });
 
-// API-prefixed auth endpoint
+// API login endpoint - checks against created accounts
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
   }
-  
-  // Check if this is a student account
-  const student = mockStudents.find(s => s.email === email);
+
+  // Check in students
+  const student = mockStudents.find(s => s.email === email || s.schoolEmail === email);
   if (student) {
-    // Authenticate student with password (mock - in real app would hash/verify)
     return res.json({
       data: {
         token: 'mock_token_' + Date.now(),
@@ -188,44 +187,39 @@ app.post('/api/auth/login', (req, res) => {
           email: student.email,
           role: 'student',
           fullName: student.fullName,
-          staffId: student.lrn,
-          schoolEmail: student.schoolEmail,
-          position: 'student'
+          gradeLevelId: student.gradeLevelId,
+          sectionId: student.sectionId,
+          lrn: student.lrn,
+          schoolEmail: student.schoolEmail
         }
       }
     });
   }
-  
-  // Otherwise, check for staff/admin accounts
-  const role = getUserRoleFromEmail(email);
-  const userId = getUserIdFromEmail(email);
-  
-  // Generate full staff data
-  const fullName = email.split('@')[0]
-    .split('.')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-  
-  const staffId = `STAFF${Date.now().toString().slice(-6)}`;
-  const schoolEmail = email;
-  const position = role === 'admin' ? 'principal' : role === 'staff' ? 'teacher' : 'student_user';
-  
-  // Mock token
-  res.json({
-    data: {
-      token: 'mock_token_' + Date.now(),
-      user: {
-        id: userId,
-        email: email,
-        role: role,
-        fullName: fullName,
-        staffId: staffId,
-        schoolEmail: schoolEmail,
-        position: position
+
+  // Check in staff
+  const staff = (global.mockStaff || []).find(s => s.email === email || s.schoolEmail === email);
+  if (staff) {
+    return res.json({
+      data: {
+        token: 'mock_token_' + Date.now(),
+        user: {
+          id: staff.id,
+          email: staff.email,
+          role: 'staff',
+          fullName: staff.fullName,
+          staffId: staff.staffId,
+          schoolEmail: staff.schoolEmail,
+          position: staff.position
+        }
       }
-    }
-  });
+    });
+  }
+
+  // User not found
+  return res.status(401).json({ error: 'Invalid email or password' });
 });
+
+
 
 // Endpoint for backward compatibility
 app.get('/students', (req, res) => {
@@ -493,27 +487,6 @@ app.get('/api/grade-levels', (req, res) => {
       { id: 'g10', name: 'Grade 10', order: 4, isActive: true },
       { id: 'g11', name: 'Grade 11', order: 5, isActive: true },
       { id: 'g12', name: 'Grade 12', order: 6, isActive: true },
-    ]
-  });
-});
-
-app.get('/api/reports', (req, res) => {
-  res.json({
-    data: [
-      {
-        id: '1',
-        title: 'Incident Report 1',
-        description: 'Test incident',
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        title: 'Incident Report 2',
-        description: 'Another test',
-        status: 'resolved',
-        createdAt: new Date().toISOString()
-      }
     ]
   });
 });
