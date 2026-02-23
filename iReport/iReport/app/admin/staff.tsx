@@ -10,6 +10,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -276,21 +278,29 @@ export default function ManageStaff() {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalVisible(false)}
       >
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create Staff Account</Text>
-            <TouchableOpacity
-              onPress={() => {
-                setModalVisible(false);
-                resetForm();
-              }}
-              style={styles.closeButton}
-            >
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
+          <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create Staff Account</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  resetForm();
+                }}
+                style={styles.closeButton}
+              >
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.modalContent}>
+            <ScrollView 
+              style={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
             <View style={styles.photoSection}>
               <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
                 {profilePhoto ? (
@@ -439,22 +449,23 @@ export default function ManageStaff() {
                 </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
+            </ScrollView>
 
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={[styles.createButton, isCreating && styles.createButtonDisabled]}
-              onPress={handleCreateStaff}
-              disabled={isCreating}
-            >
-              {isCreating ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={styles.createButtonText}>Create Staff</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.createButton, isCreating && styles.createButtonDisabled]}
+                onPress={handleCreateStaff}
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <ActivityIndicator color={colors.surface} />
+                ) : (
+                  <Text style={styles.createButtonText}>Create Staff</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal

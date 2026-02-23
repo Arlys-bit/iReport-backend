@@ -10,6 +10,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -202,15 +204,23 @@ export default function ManageStudents() {
       </View>
 
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create Student Account</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
+          <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create Student Account</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.modalContent}>
+            <ScrollView 
+              style={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
             <View style={styles.photoSection}>
               <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
                 {profilePhoto ? (
@@ -300,22 +310,23 @@ export default function ManageStudents() {
                 autoCapitalize="none"
               />
             </View>
-          </ScrollView>
+            </ScrollView>
 
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={[styles.createButton, isCreatingStudent && styles.createButtonDisabled]}
-              onPress={handleCreateStudent}
-              disabled={isCreatingStudent}
-            >
-              {isCreatingStudent ? (
-                <ActivityIndicator color={colors.surface} />
-              ) : (
-                <Text style={styles.createButtonText}>Create Student</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.createButton, isCreatingStudent && styles.createButtonDisabled]}
+                onPress={handleCreateStudent}
+                disabled={isCreatingStudent}
+              >
+                {isCreatingStudent ? (
+                  <ActivityIndicator color={colors.surface} />
+                ) : (
+                  <Text style={styles.createButtonText}>Create Student</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={showGradePicker} transparent animationType="fade">

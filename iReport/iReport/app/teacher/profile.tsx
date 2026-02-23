@@ -11,6 +11,8 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -678,8 +680,12 @@ export default function TeacherProfile() {
       </Modal>
 
       <Modal visible={showChangePasswordModal} transparent animationType="fade">
-        <View style={dynamicStyles.logoutModalOverlay}>
-          <View style={dynamicStyles.logoutModalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={dynamicStyles.logoutModalOverlay}>
+            <View style={dynamicStyles.logoutModalContent}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={dynamicStyles.logoutModalTitle}>Change Password</Text>
               <TouchableOpacity onPress={() => setShowChangePasswordModal(false)}>
@@ -765,11 +771,16 @@ export default function TeacherProfile() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={showPasswordModal} transparent animationType="fade">
-        <View style={dynamicStyles.logoutModalOverlay}>
-          <View style={dynamicStyles.logoutModalContent}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={dynamicStyles.logoutModalOverlay}>
+            <View style={dynamicStyles.logoutModalContent}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={dynamicStyles.logoutModalTitle}>Change Password</Text>
               <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
@@ -831,6 +842,7 @@ export default function TeacherProfile() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={showPermissionsModal} transparent animationType="fade">

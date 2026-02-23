@@ -11,6 +11,8 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -605,60 +607,69 @@ export default function AdminProfile() {
       </ScrollView>
 
       <Modal visible={showPasswordModal} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={dynamicStyles.modalContainer} edges={['top', 'bottom']}>
-          <View style={dynamicStyles.modalHeader}>
-            <Text style={dynamicStyles.modalTitle}>Change Password</Text>
-            <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          <View style={dynamicStyles.modalContent}>
-            <View style={dynamicStyles.inputGroup}>
-              <Text style={dynamicStyles.label}>Current Password</Text>
-              <TextInput
-                style={dynamicStyles.input}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                placeholder="Enter current password"
-                placeholderTextColor={colors.textLight}
-                secureTextEntry
-              />
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+        >
+          <SafeAreaView style={dynamicStyles.modalContainer} edges={['top', 'bottom']}>
+            <View style={dynamicStyles.modalHeader}>
+              <Text style={dynamicStyles.modalTitle}>Change Password</Text>
+              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
             </View>
-            <View style={dynamicStyles.inputGroup}>
-              <Text style={dynamicStyles.label}>New Password</Text>
-              <TextInput
-                style={dynamicStyles.input}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Enter new password"
-                placeholderTextColor={colors.textLight}
-                secureTextEntry
-              />
-            </View>
-            <View style={dynamicStyles.inputGroup}>
-              <Text style={dynamicStyles.label}>Confirm New Password</Text>
-              <TextInput
-                style={dynamicStyles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm new password"
-                placeholderTextColor={colors.textLight}
-                secureTextEntry
-              />
-            </View>
-            <TouchableOpacity 
-              style={[dynamicStyles.modalButton, changePasswordMutation?.isPending && dynamicStyles.disabledButton]} 
-              onPress={handleChangePassword}
-              disabled={changePasswordMutation?.isPending}
+            <ScrollView 
+              style={dynamicStyles.modalContent}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
             >
-              {changePasswordMutation?.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={dynamicStyles.modalButtonText}>Change Password</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
+              <View style={dynamicStyles.inputGroup}>
+                <Text style={dynamicStyles.label}>Current Password</Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder="Enter current password"
+                  placeholderTextColor={colors.textLight}
+                  secureTextEntry
+                />
+              </View>
+              <View style={dynamicStyles.inputGroup}>
+                <Text style={dynamicStyles.label}>New Password</Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="Enter new password"
+                  placeholderTextColor={colors.textLight}
+                  secureTextEntry
+                />
+              </View>
+              <View style={dynamicStyles.inputGroup}>
+                <Text style={dynamicStyles.label}>Confirm New Password</Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm new password"
+                  placeholderTextColor={colors.textLight}
+                  secureTextEntry
+                />
+              </View>
+              <TouchableOpacity 
+                style={[dynamicStyles.modalButton, changePasswordMutation?.isPending && dynamicStyles.disabledButton]} 
+                onPress={handleChangePassword}
+                disabled={changePasswordMutation?.isPending}
+              >
+                {changePasswordMutation?.isPending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={dynamicStyles.modalButtonText}>Change Password</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={showLanguageModal} transparent animationType="fade">
