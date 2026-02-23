@@ -25,6 +25,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         
         if (token && userStr) {
           const user = JSON.parse(userStr);
+          
+          // Invalidate old cache format (before we added staffId, schoolEmail, position)
+          if (!user.staffId && !user.schoolEmail && !user.position) {
+            console.log('🗑️ Clearing old cached user - missing required fields');
+            await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            await AsyncStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+            setIsLoading(false);
+            return;
+          }
+          
           setCurrentUser(user);
           // Initialize socket connection
           initializeSocket(user.id);
