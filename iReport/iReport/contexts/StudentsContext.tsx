@@ -93,7 +93,14 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
         // Try to fetch from backend
         const response = await apiClient.get('/api/sections');
         if (response.data?.data && Array.isArray(response.data.data)) {
-          const sections = response.data.data;
+          // Transform backend response to match frontend Section type
+          const sections: Section[] = response.data.data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            gradeLevelId: s.gradeLevel, // Backend returns 'gradeLevel', transform to 'gradeLevelId'
+            advisorId: s.advisorId,
+            isActive: s.isActive !== false,
+          }));
           // Cache to AsyncStorage
           await AsyncStorage.setItem(STORAGE_KEYS.SECTIONS, JSON.stringify(sections));
           return sections;
@@ -166,9 +173,18 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
         });
         
         if (response.data?.data) {
+          // Transform backend response to match frontend Section type
+          const backendSection = response.data.data;
+          const section: Section = {
+            id: backendSection.id,
+            name: backendSection.name,
+            gradeLevelId: backendSection.gradeLevel, // Backend returns 'gradeLevel', frontend expects 'gradeLevelId'
+            advisorId: data.advisorId,
+            isActive: true,
+          };
           // Invalidate sections query to refetch from backend
           await queryClient.invalidateQueries({ queryKey: ['sections'] });
-          return response.data.data;
+          return section;
         }
       } catch (error) {
         console.warn('Failed to create section on backend:', error);
