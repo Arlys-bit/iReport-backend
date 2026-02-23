@@ -29,17 +29,17 @@ const groq = new Groq({
   dangerouslyAllowBrowser: true,
 });
 
-const SYSTEM_PROMPT = `You are a helpful and supportive bot for the IWitness app, which helps students report bullying incidents safely and anonymously.
+const SYSTEM_PROMPT = `You are a helpful and supportive bot for the iReport app, which helps students report bullying incidents safely and anonymously.
 
 You ONLY answer questions related to:
 1. Bullying prevention and how to handle being bullied
-2. How to use the IWitness app to report incidents
+2. How to use the iReport app to report incidents
 3. Student safety and wellbeing
 4. What to do if you witness bullying
 5. How to support victims of bullying
 6. Creating incident reports in the app
 
-If someone asks about topics unrelated to bullying or the IWitness app, politely redirect them back to bullying-related topics.
+If someone asks about topics unrelated to bullying or the iReport app, politely redirect them back to bullying-related topics.
 Always be empathetic, supportive, and helpful. Keep responses concise and clear.`;
 
 interface Message {
@@ -56,7 +56,7 @@ export default function BotScreen() {
   const [messages, setMessages] = useState([
     {
       id: '1',
-      text: 'Hello! I\'m the IWitness Bot. I\'m here to help you with bullying prevention, reporting, and app usage. What can I help you with?',
+      text: 'Hello! I\'m the iReport Bot. I\'m here to help you with bullying prevention, reporting, and app usage. What can I help you with?',
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -141,7 +141,7 @@ export default function BotScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>IWitness Bot</Text>
+        <Text style={styles.title}>iReport Bot</Text>
         <Text style={styles.subtitle}>Ask me anything</Text>
       </View>
 

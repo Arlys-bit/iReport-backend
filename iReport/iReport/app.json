@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "IWitness Bullying Report",
+    "name": "iReport",
     "slug": "iwitness-bullying-report",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -26,6 +26,7 @@
     },
     "web": {
     },
+    "icon": "./assets/iReport Icon.png",
     "plugins": [
       [
         "expo-router",

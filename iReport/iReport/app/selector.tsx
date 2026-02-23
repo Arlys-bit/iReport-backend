@@ -126,7 +126,7 @@ export default function SelectorScreen() {
             id: '3',
             title: 'Ask Bot',
             icon: Lightbulb,
-            description: 'Ask the IWitness Bot for help',
+            description: 'Ask the iReport Bot for help',
             onPress: () => router.push('/bot'),
             isActive: true,
       },
@@ -175,7 +175,7 @@ export default function SelectorScreen() {
               source={require('@/assets/iReport Icon.png')} 
               style={styles.headerImage}
             />
-            <Text style={[styles.title, { color: colors.text }]}>IWitness</Text>
+            <Text style={[styles.title, { color: colors.text }]}>iReport</Text>
             <Text style={[styles.subtitle, { color: colors.textLight }]}>Digital Bullying Tracking System</Text>
             <Text style={[styles.welcomeRole, { color: colors.textSecondary }]}>{welcomeLabel}</Text>
           </View>
