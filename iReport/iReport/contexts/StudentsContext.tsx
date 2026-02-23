@@ -259,7 +259,8 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
           return response.data.data;
         }
       } catch (backendError: any) {
-        console.warn('Backend student creation failed, falling back to local:', backendError);
+        console.error('❌ Backend student creation failed:', backendError.response?.data || backendError.message);
+        throw new Error(backendError.response?.data?.error || 'Failed to create student on backend. Please ensure all required fields are filled.');
       }
       
       // Fall back to local-only creation
@@ -272,10 +273,10 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
         createdAt: new Date().toISOString(),
       };
       
-      console.log('🟢 Saving new student locally:', newStudent);
+      console.log('⚠️ WARNING: Student created locally only (not on backend):', newStudent);
       const updated = [...students, newStudent];
       await saveStudentsMutation.mutateAsync(updated);
-      console.log('🟢 Student saved successfully');
+      console.log('⚠️ Local student saved');
       return newStudent;
     },
     onSuccess: (newStudent) => {
