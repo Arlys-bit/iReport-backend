@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { AlertTriangle, MapPin, Shield, Users, MessageSquare, Zap, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -138,7 +138,11 @@ export default function StudentLiveReportScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Where is it happening?</Text>
 
@@ -287,6 +291,7 @@ export default function StudentLiveReportScreen() {
           Only use for real emergencies happening right now.
         </Text>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {showSuccess && (
         <View style={styles.successOverlay}>

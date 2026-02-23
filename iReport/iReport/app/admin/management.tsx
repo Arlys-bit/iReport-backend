@@ -10,6 +10,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -760,7 +762,11 @@ export default function ManagementPage() {
               <X size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoidingView}
+          >
+            <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={styles.photoSection}>
               <TouchableOpacity style={styles.photoButton} onPress={() => handlePickImage('student')}>
                 {studentForm.profilePhoto ? (
@@ -858,6 +864,7 @@ export default function ManagementPage() {
               />
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
           <View style={styles.modalFooter}>
             <TouchableOpacity
               style={[styles.submitButton, isCreatingStudent && styles.submitButtonDisabled]}
@@ -882,7 +889,11 @@ export default function ManagementPage() {
               <X size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoidingView}
+          >
+            <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={styles.photoSection}>
               <TouchableOpacity style={styles.photoButton} onPress={() => handlePickImage('staff')}>
                 {staffForm.profilePhoto ? (
@@ -1031,6 +1042,7 @@ export default function ManagementPage() {
               </View>
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
           <View style={styles.modalFooter}>
             <TouchableOpacity
               style={[styles.submitButton, isCreatingStaff && styles.submitButtonDisabled]}
@@ -2153,5 +2165,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.primary,
     alignItems: 'center',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
 });

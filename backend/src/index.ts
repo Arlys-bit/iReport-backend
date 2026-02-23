@@ -341,9 +341,15 @@ app.put('/api/auth/students/:id/password', (req, res) => {
   res.json({ data: student, message: 'Password updated successfully' });
 });
 
-// Mock reports endpoint
+// Mock reports array for persistence
+let mockReports: any[] = [];
+
+// Helper function to format report ID
+const generateReportId = () => `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+// Old mock reports endpoint for backward compatibility
 app.get('/reports', (req, res) => {
-  res.json([
+  res.json(mockReports.length > 0 ? mockReports : [
     {
       id: '1',
       title: 'Incident Report 1',
@@ -359,6 +365,79 @@ app.get('/reports', (req, res) => {
       createdAt: new Date().toISOString()
     }
   ]);
+});
+
+// New API reports endpoints
+app.get('/api/reports', (req, res) => {
+  res.json({ data: mockReports });
+});
+
+app.post('/api/reports', (req, res) => {
+  const {
+    reporterId,
+    reporterName,
+    reporterGradeLevelId,
+    reporterSectionId,
+    buildingId,
+    buildingName,
+    floor,
+    room,
+    incidentType,
+    description,
+    status = 'pending',
+  } = req.body;
+
+  if (!reporterId || !reporterName || !incidentType || !description) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const newReport = {
+    id: generateReportId(),
+    reporterId,
+    reporterName,
+    reporterGradeLevelId,
+    reporterSectionId,
+    buildingId,
+    buildingName,
+    floor,
+    room,
+    incidentType,
+    description,
+    status,
+    priority: incidentType === 'emergency' ? 'critical' : 'high',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  mockReports.push(newReport);
+  res.status(201).json({ data: newReport });
+});
+
+app.get('/api/reports/:id', (req, res) => {
+  const { id } = req.params;
+  const report = mockReports.find(r => r.id === id);
+
+  if (!report) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+
+  res.json({ data: report });
+});
+
+app.put('/api/reports/:id', (req, res) => {
+  const { id } = req.params;
+  const { status, description } = req.body;
+
+  const report = mockReports.find(r => r.id === id);
+  if (!report) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+
+  if (status) report.status = status;
+  if (description) report.description = description;
+  report.updatedAt = new Date().toISOString();
+
+  res.json({ data: report });
 });
 
 // Sections endpoint
