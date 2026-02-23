@@ -158,6 +158,23 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
 
   const createSectionMutation = useMutation({
     mutationFn: async (data: { name: string; gradeLevelId: string; advisorId?: string }) => {
+      try {
+        // First try to create on backend
+        const response = await apiClient.post('/api/sections', {
+          name: data.name,
+          gradeLevel: data.gradeLevelId,
+        });
+        
+        if (response.data?.data) {
+          // Invalidate sections query to refetch from backend
+          await queryClient.invalidateQueries({ queryKey: ['sections'] });
+          return response.data.data;
+        }
+      } catch (error) {
+        console.warn('Failed to create section on backend:', error);
+      }
+      
+      // Fallback to local storage if backend fails
       const sections: Section[] = sectionsQuery.data || [];
       
       const exists = sections.some(

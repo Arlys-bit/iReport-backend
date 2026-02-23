@@ -86,6 +86,16 @@ app.post('/auth/login', (req, res) => {
   const role = getUserRoleFromEmail(email);
   const userId = getUserIdFromEmail(email);
   
+  // Generate full staff data
+  const fullName = email.split('@')[0]
+    .split('.')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  const staffId = `STAFF${Date.now().toString().slice(-6)}`;
+  const schoolEmail = email;
+  const position = role === 'admin' ? 'principal' : role === 'staff' ? 'teacher' : 'student_user';
+  
   // Mock token
   res.json({
     data: {
@@ -93,7 +103,11 @@ app.post('/auth/login', (req, res) => {
       user: {
         id: userId,
         email: email,
-        role: role
+        role: role,
+        fullName: fullName,
+        staffId: staffId,
+        schoolEmail: schoolEmail,
+        position: position
       }
     }
   });
@@ -110,6 +124,16 @@ app.post('/api/auth/login', (req, res) => {
   const role = getUserRoleFromEmail(email);
   const userId = getUserIdFromEmail(email);
   
+  // Generate full staff data
+  const fullName = email.split('@')[0]
+    .split('.')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  const staffId = `STAFF${Date.now().toString().slice(-6)}`;
+  const schoolEmail = email;
+  const position = role === 'admin' ? 'principal' : role === 'staff' ? 'teacher' : 'student_user';
+  
   // Mock token
   res.json({
     data: {
@@ -117,7 +141,11 @@ app.post('/api/auth/login', (req, res) => {
       user: {
         id: userId,
         email: email,
-        role: role
+        role: role,
+        fullName: fullName,
+        staffId: staffId,
+        schoolEmail: schoolEmail,
+        position: position
       }
     }
   });

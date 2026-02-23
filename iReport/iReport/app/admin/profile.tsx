@@ -498,7 +498,7 @@ export default function AdminProfile() {
               ) : (
                 <View style={dynamicStyles.profilePhotoPlaceholder}>
                   <Text style={dynamicStyles.profileInitial}>
-                    {staffMember.fullName.charAt(0).toUpperCase()}
+                    {(staffMember.fullName || staffMember.email || '?').charAt(0).toUpperCase()}
                   </Text>
                 </View>
               )}
@@ -512,7 +512,7 @@ export default function AdminProfile() {
               </TouchableOpacity>
             )}
           </View>
-          <Text style={dynamicStyles.name}>{staffMember.fullName}</Text>
+          <Text style={dynamicStyles.name}>{staffMember.fullName || staffMember.email || 'User'}</Text>
           <Text style={dynamicStyles.subtitle}>{getPositionName(staffMember.position)}</Text>
         </View>
 
