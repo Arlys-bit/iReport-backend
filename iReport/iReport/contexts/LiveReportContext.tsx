@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect, useCallback } from 'react';
 import { LiveIncident, LiveIncidentResponder, UserRole } from '@/types';
+import apiClient from '@/services/apiClient';
 
 const STORAGE_KEY = 'school_live_incidents';
 
@@ -13,10 +14,23 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
   const incidentsQuery = useQuery({
     queryKey: ['liveIncidents'],
     queryFn: async () => {
+      try {
+        // Try to fetch from backend
+        const response = await apiClient.get('/api/reports');
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          // Cache to AsyncStorage
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(response.data.data));
+          return response.data.data;
+        }
+      } catch (error) {
+        console.error('Error fetching reports from backend:', error);
+      }
+      
+      // Fallback to local storage
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     },
-    refetchInterval: 5000,
+    refetchInterval: 5000, // Refetch every 5 seconds to sync reports
   });
 
   useEffect(() => {
@@ -44,17 +58,48 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
       incidentType: string;
       description: string;
     }) => {
-      const newIncident: LiveIncident = {
-        id: `live_${Date.now()}`,
-        ...data,
-        status: 'active',
-        responders: [],
-        createdAt: new Date().toISOString(),
-      };
+      try {
+        // Post to backend API
+        const response = await apiClient.post('/api/reports', {
+          ...data,
+          status: 'pending',
+        });
 
-      const updated = [newIncident, ...incidents];
-      await saveIncidents(updated);
-      return newIncident;
+        if (response.data?.data) {
+          const newIncident: LiveIncident = {
+            id: response.data.data.id,
+            ...data,
+            status: 'active',
+            responders: [],
+            createdAt: response.data.data.createdAt,
+          };
+
+          const updated = [newIncident, ...incidents];
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          setIncidents(updated);
+          queryClient.invalidateQueries({ queryKey: ['liveIncidents'] });
+          
+          return newIncident;
+        }
+        throw new Error('Failed to create incident');
+      } catch (error) {
+        console.error('Error creating incident:', error);
+        // Fallback: create locally if backend fails
+        const newIncident: LiveIncident = {
+          id: `live_${Date.now()}`,
+          ...data,
+          status: 'active',
+          responders: [],
+          createdAt: new Date().toISOString(),
+        };
+
+        const updated = [newIncident, ...incidents];
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        setIncidents(updated);
+        queryClient.invalidateQueries({ queryKey: ['liveIncidents'] });
+        
+        return newIncident;
+      }
     },
   });
 
