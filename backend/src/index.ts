@@ -48,6 +48,25 @@ app.post('/auth/login', (req, res) => {
   });
 });
 
+// API-prefixed auth endpoint
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+  
+  // Mock token
+  res.json({
+    token: 'mock_token_' + Date.now(),
+    user: {
+      id: 'user_123',
+      email: email,
+      role: 'student'
+    }
+  });
+});
+
 // Mock students endpoint (both /students and /api/students)
 const mockStudents = [
   {
