@@ -218,6 +218,14 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
     mutationFn: async (data: Omit<Student, 'id' | 'createdAt' | 'role' | 'isActive' | 'violationHistory'>) => {
       console.log('🟢 createStudentMutation started with data:', data);
       const students: Student[] = studentsQuery.data || [];
+      const availableSections: Section[] = sectionsQuery.data || [];
+      
+      // Verify section exists
+      const sectionExists = availableSections.some(s => s.id === data.sectionId);
+      if (!sectionExists && data.sectionId) {
+        console.warn('⚠️ Selected section does not exist on backend:', data.sectionId);
+        throw new Error('Selected section does not exist. Please create the section first or select an existing section.');
+      }
       
       const lrnExists = students.some(s => s.lrn === data.lrn);
       if (lrnExists) {
