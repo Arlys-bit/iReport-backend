@@ -14,13 +14,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ireport-backend-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://ireport-backend.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ireport-backend-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://ireport-backend.onrender.com"
       }
     }
   },
