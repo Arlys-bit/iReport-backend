@@ -1,34 +1,96 @@
 #!/usr/bin/env node
 
-const http = require('http');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
 
-let requestCount = 0;
+// Load environment variables
+dotenv.config();
 
-const server = http.createServer((req, res) => {
-  requestCount++;
-  console.log('[REQ #' + requestCount + ']', req.method, req.url, 'uptime=' + Math.round(process.uptime()) + 's');
+const app = express();
+const PORT = parseInt(process.env.PORT || '3000', 10);
+
+// Middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGIN?.split(',') || '*',
+}));
+app.use(express.json());
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'iReport Backend API', version: '1.0.0' });
+});
+
+// Mock auth endpoint
+app.post('/auth/login', (req, res) => {
+  const { email, password } = req.body;
   
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ 
-    status: 'ok',
-    uptime: process.uptime(),
-    requests: requestCount
-  }));
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+  
+  // Mock token
+  res.json({
+    token: 'mock_token_' + Date.now(),
+    user: {
+      id: 'user_123',
+      email: email,
+      role: 'student'
+    }
+  });
 });
 
-const PORT = 3000;
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('[START]', new Date().toISOString(), 'PID=' + process.pid);
-  console.log('[READY] Listening on', PORT);
+// Mock students endpoint
+app.get('/students', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@school.com',
+      gradeLevel: '10',
+      section: 'A',
+      schoolEmail: 'john.doe@school.edu'
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@school.com',
+      gradeLevel: '10',
+      section: 'B',
+      schoolEmail: 'jane.smith@school.edu'
+    }
+  ]);
 });
 
-process.on('SIGTERM', () => {
-  console.log('[STOP]', new Date().toISOString());
-  process.exit(0);
+// Mock reports endpoint
+app.get('/reports', (req, res) => {
+  res.json([
+    {
+      id: '1',
+      title: 'Incident Report 1',
+      description: 'Test incident',
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      title: 'Incident Report 2',
+      description: 'Another test',
+      status: 'resolved',
+      createdAt: new Date().toISOString()
+    }
+  ]);
 });
 
-// Keep process alive forever
-setInterval(() => {
-  // noop
-}, 1000);
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[START] Server running on port ${PORT}`);
+  console.log(`[READY] Health check: http://localhost:${PORT}/health`);
+});
+
+export default app;
