@@ -153,10 +153,25 @@ app.post('/api/auth/login', (req, res) => {
 
 // Mock students endpoint (both /students and /api/students)
 const mockSections = [
-  { id: 'sec_a', name: 'Section A', gradeLevel: '10', order: 1 },
-  { id: 'sec_b', name: 'Section B', gradeLevel: '10', order: 2 },
-  { id: 'sec_c', name: 'Section C', gradeLevel: '10', order: 3 },
-  { id: 'sec_d', name: 'Section D', gradeLevel: '11', order: 4 },
+  // Grade 7
+  { id: 'sec_g7_a', name: 'Section A', gradeLevel: 'g7', order: 1 },
+  { id: 'sec_g7_b', name: 'Section B', gradeLevel: 'g7', order: 2 },
+  // Grade 8
+  { id: 'sec_g8_a', name: 'Section A', gradeLevel: 'g8', order: 1 },
+  { id: 'sec_g8_b', name: 'Section B', gradeLevel: 'g8', order: 2 },
+  // Grade 9
+  { id: 'sec_g9_a', name: 'Section A', gradeLevel: 'g9', order: 1 },
+  { id: 'sec_g9_b', name: 'Section B', gradeLevel: 'g9', order: 2 },
+  // Grade 10
+  { id: 'sec_g10_a', name: 'Section A', gradeLevel: 'g10', order: 1 },
+  { id: 'sec_g10_b', name: 'Section B', gradeLevel: 'g10', order: 2 },
+  { id: 'sec_g10_c', name: 'Section C', gradeLevel: 'g10', order: 3 },
+  // Grade 11
+  { id: 'sec_g11_a', name: 'Section A', gradeLevel: 'g11', order: 1 },
+  { id: 'sec_g11_b', name: 'Section B', gradeLevel: 'g11', order: 2 },
+  // Grade 12
+  { id: 'sec_g12_a', name: 'Section A', gradeLevel: 'g12', order: 1 },
+  { id: 'sec_g12_b', name: 'Section B', gradeLevel: 'g12', order: 2 },
 ];
 
 const mockStudents = [
@@ -168,7 +183,7 @@ const mockStudents = [
     section: 'A',
     schoolEmail: 'john.doe@school.edu',
     gradeLevelId: 'g10',
-    sectionId: 'sec_a',
+    sectionId: 'sec_g10_a',
     lrn: 'LRN001',
     role: 'student',
     isActive: true,
@@ -182,7 +197,7 @@ const mockStudents = [
     section: 'B',
     schoolEmail: 'jane.smith@school.edu',
     gradeLevelId: 'g10',
-    sectionId: 'sec_b',
+    sectionId: 'sec_g10_b',
     lrn: 'LRN002',
     role: 'student',
     isActive: true,
@@ -207,16 +222,23 @@ app.post('/api/students', (req, res) => {
     return res.status(400).json({ error: 'Full name, email, and LRN are required' });
   }
   
-  // Default to first section if not provided
-  const assignedSectionId = sectionId || 'sec_a';
-  const assignedSection = mockSections.find(s => s.id === assignedSectionId) || mockSections[0];
+  // Default to first section for the given grade level, or first section overall
+  const defaultGradeLevel = gradeLevelId || 'g10';
+  let assignedSectionId = sectionId;
+  
+  if (!assignedSectionId) {
+    const sectionForGrade = mockSections.find(s => s.gradeLevel === defaultGradeLevel);
+    assignedSectionId = sectionForGrade ? sectionForGrade.id : mockSections[0]?.id || 'sec_g10_a';
+  }
+  
+  const assignedSection = mockSections.find(s => s.id === assignedSectionId) || { name: 'Unknown', gradeLevel: defaultGradeLevel };
   
   const newStudent = {
     id: 'student_' + Date.now(),
     fullName,
     email,
     lrn,
-    gradeLevelId: gradeLevelId || 'g10',
+    gradeLevelId: defaultGradeLevel,
     sectionId: assignedSectionId,
     schoolEmail: schoolEmail || '',
     gradeLevel: gradeLevelId || '10',
