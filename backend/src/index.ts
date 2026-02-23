@@ -261,6 +261,24 @@ app.get('/api/sections', (req, res) => {
   res.json({ data: mockSections });
 });
 
+app.post('/api/sections', (req, res) => {
+  const { name, gradeLevel } = req.body;
+  
+  if (!name || !gradeLevel) {
+    return res.status(400).json({ error: 'Section name and grade level are required' });
+  }
+  
+  const newSection = {
+    id: 'sec_' + Date.now(),
+    name,
+    gradeLevel,
+    order: mockSections.filter(s => s.gradeLevel === gradeLevel).length + 1
+  };
+  
+  mockSections.push(newSection);
+  res.status(201).json({ data: newSection });
+});
+
 // Grade levels endpoint
 app.get('/api/grade-levels', (req, res) => {
   res.json({
