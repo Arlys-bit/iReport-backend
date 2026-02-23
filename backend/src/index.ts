@@ -49,6 +49,22 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Helper function to determine user role based on email
+const getUserRoleFromEmail = (email: string): string => {
+  if (email.includes('admin')) {
+    return 'admin';
+  } else if (email.includes('teacher') || email.includes('staff')) {
+    return 'staff';
+  }
+  return 'student';
+};
+
+// Helper function to generate user ID based on email
+const getUserIdFromEmail = (email: string): string => {
+  const base = email.split('@')[0];
+  return `user_${base}_${Date.now().toString().slice(-4)}`;
+};
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
@@ -67,14 +83,17 @@ app.post('/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   
+  const role = getUserRoleFromEmail(email);
+  const userId = getUserIdFromEmail(email);
+  
   // Mock token
   res.json({
     data: {
       token: 'mock_token_' + Date.now(),
       user: {
-        id: 'user_123',
+        id: userId,
         email: email,
-        role: 'student'
+        role: role
       }
     }
   });
@@ -88,14 +107,17 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   
+  const role = getUserRoleFromEmail(email);
+  const userId = getUserIdFromEmail(email);
+  
   // Mock token
   res.json({
     data: {
       token: 'mock_token_' + Date.now(),
       user: {
-        id: 'user_123',
+        id: userId,
         email: email,
-        role: 'student'
+        role: role
       }
     }
   });
