@@ -63,6 +63,20 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
   const gradeLevelsQuery = useQuery({
     queryKey: ['gradeLevels'],
     queryFn: async () => {
+      try {
+        // Try to fetch from backend
+        const response = await apiClient.get('/api/grade-levels');
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          const gradeLevels = response.data.data;
+          // Cache to AsyncStorage
+          await AsyncStorage.setItem(STORAGE_KEYS.GRADE_LEVELS, JSON.stringify(gradeLevels));
+          return gradeLevels;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch grade levels from backend:', error);
+      }
+      
+      // Fall back to cached or default
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.GRADE_LEVELS);
       if (stored) {
         return JSON.parse(stored);
@@ -75,6 +89,20 @@ export const [StudentsProvider, useStudents] = createContextHook(() => {
   const sectionsQuery = useQuery({
     queryKey: ['sections'],
     queryFn: async () => {
+      try {
+        // Try to fetch from backend
+        const response = await apiClient.get('/api/sections');
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          const sections = response.data.data;
+          // Cache to AsyncStorage
+          await AsyncStorage.setItem(STORAGE_KEYS.SECTIONS, JSON.stringify(sections));
+          return sections;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch sections from backend:', error);
+      }
+      
+      // Fall back to cached
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.SECTIONS);
       return stored ? JSON.parse(stored) : [];
     },
