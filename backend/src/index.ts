@@ -39,11 +39,13 @@ app.post('/auth/login', (req, res) => {
   
   // Mock token
   res.json({
-    token: 'mock_token_' + Date.now(),
-    user: {
-      id: 'user_123',
-      email: email,
-      role: 'student'
+    data: {
+      token: 'mock_token_' + Date.now(),
+      user: {
+        id: 'user_123',
+        email: email,
+        role: 'student'
+      }
     }
   });
 });
@@ -58,11 +60,13 @@ app.post('/api/auth/login', (req, res) => {
   
   // Mock token
   res.json({
-    token: 'mock_token_' + Date.now(),
-    user: {
-      id: 'user_123',
-      email: email,
-      role: 'student'
+    data: {
+      token: 'mock_token_' + Date.now(),
+      user: {
+        id: 'user_123',
+        email: email,
+        role: 'student'
+      }
     }
   });
 });
