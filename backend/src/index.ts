@@ -275,6 +275,39 @@ app.post('/api/students', (req, res) => {
   res.status(201).json({ data: newStudent });
 });
 
+// Staff creation endpoint
+app.post('/api/staff', (req, res) => {
+  const { fullName, staffId, schoolEmail, email, password, position, specialization, rank } = req.body;
+  
+  if (!fullName || !staffId || !schoolEmail) {
+    return res.status(400).json({ error: 'Full name, staff ID, and school email are required' });
+  }
+  
+  const newStaff = {
+    id: 'staff_' + Date.now(),
+    fullName,
+    staffId,
+    schoolEmail,
+    email: email || schoolEmail,
+    password,
+    position: position || 'teacher',
+    specialization: specialization || undefined,
+    rank: rank || undefined,
+    role: 'staff',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  };
+  
+  // Add to mock students array under a staff collection (or separate array)
+  // For now, store in a virtual collection
+  if (!global.mockStaff) {
+    global.mockStaff = [];
+  }
+  global.mockStaff.push(newStaff);
+  
+  res.status(201).json({ data: newStaff });
+});
+
 app.put('/api/auth/students/:id/email', (req, res) => {
   const { id } = req.params;
   const { newEmail } = req.body;
@@ -330,25 +363,45 @@ app.get('/reports', (req, res) => {
 
 // Sections endpoint
 app.get('/api/sections', (req, res) => {
-  res.json({ data: mockSections });
+  const sectionsWithGradeLevelId = mockSections.map(s => ({
+    ...s,
+    gradeLevelId: s.gradeLevel,
+    gradeLevel: undefined
+  }));
+  res.json({ data: sectionsWithGradeLevelId });
 });
 
 app.post('/api/sections', (req, res) => {
-  const { name, gradeLevel } = req.body;
+  const { name, gradeLevelId, gradeLevel } = req.body;
+  const grade = gradeLevelId || gradeLevel;
   
-  if (!name || !gradeLevel) {
+  if (!name || !grade) {
     return res.status(400).json({ error: 'Section name and grade level are required' });
   }
   
   const newSection = {
     id: 'sec_' + Date.now(),
     name,
-    gradeLevel,
-    order: mockSections.filter(s => s.gradeLevel === gradeLevel).length + 1
+    gradeLevel: grade,
+    order: mockSections.filter(s => s.gradeLevel === grade).length + 1
   };
   
   mockSections.push(newSection);
-  res.status(201).json({ data: newSection });
+  const sectionResponse = { ...newSection, gradeLevelId: newSection.gradeLevel };
+  delete sectionResponse.gradeLevel;
+  res.status(201).json({ data: sectionResponse });
+});
+
+app.delete('/api/sections/:id', (req, res) => {
+  const { id } = req.params;
+  const index = mockSections.findIndex(s => s.id === id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'Section not found' });
+  }
+  
+  const deletedSection = mockSections.splice(index, 1)[0];
+  res.json({ data: deletedSection, message: 'Section deleted successfully' });
 });
 
 // Grade levels endpoint
