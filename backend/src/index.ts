@@ -65,6 +65,61 @@ const getUserIdFromEmail = (email: string): string => {
   return `user_${base}_${Date.now().toString().slice(-4)}`;
 };
 
+// Mock sections array
+const mockSections = [
+  // Grade 7
+  { id: 'sec_g7_a', name: 'Section A', gradeLevel: 'g7', order: 1 },
+  { id: 'sec_g7_b', name: 'Section B', gradeLevel: 'g7', order: 2 },
+  // Grade 8
+  { id: 'sec_g8_a', name: 'Section A', gradeLevel: 'g8', order: 1 },
+  { id: 'sec_g8_b', name: 'Section B', gradeLevel: 'g8', order: 2 },
+  // Grade 9
+  { id: 'sec_g9_a', name: 'Section A', gradeLevel: 'g9', order: 1 },
+  { id: 'sec_g9_b', name: 'Section B', gradeLevel: 'g9', order: 2 },
+  // Grade 10
+  { id: 'sec_g10_a', name: 'Section A', gradeLevel: 'g10', order: 1 },
+  { id: 'sec_g10_b', name: 'Section B', gradeLevel: 'g10', order: 2 },
+  { id: 'sec_g10_c', name: 'Section C', gradeLevel: 'g10', order: 3 },
+  // Grade 11
+  { id: 'sec_g11_a', name: 'Section A', gradeLevel: 'g11', order: 1 },
+  { id: 'sec_g11_b', name: 'Section B', gradeLevel: 'g11', order: 2 },
+  // Grade 12
+  { id: 'sec_g12_a', name: 'Section A', gradeLevel: 'g12', order: 1 },
+  { id: 'sec_g12_b', name: 'Section B', gradeLevel: 'g12', order: 2 },
+];
+
+// Mock students array
+const mockStudents = [
+  {
+    id: '1',
+    fullName: 'John Doe',
+    email: 'john@school.com',
+    gradeLevel: '10',
+    section: 'A',
+    schoolEmail: 'john.doe@school.edu',
+    gradeLevelId: 'g10',
+    sectionId: 'sec_g10_a',
+    lrn: 'LRN001',
+    role: 'student',
+    isActive: true,
+    violationHistory: []
+  },
+  {
+    id: '2',
+    fullName: 'Jane Smith',
+    email: 'jane@school.com',
+    gradeLevel: '10',
+    section: 'B',
+    schoolEmail: 'jane.smith@school.edu',
+    gradeLevelId: 'g10',
+    sectionId: 'sec_g10_b',
+    lrn: 'LRN002',
+    role: 'student',
+    isActive: true,
+    violationHistory: []
+  }
+];
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
@@ -121,6 +176,27 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   
+  // Check if this is a student account
+  const student = mockStudents.find(s => s.email === email);
+  if (student) {
+    // Authenticate student with password (mock - in real app would hash/verify)
+    return res.json({
+      data: {
+        token: 'mock_token_' + Date.now(),
+        user: {
+          id: student.id,
+          email: student.email,
+          role: 'student',
+          fullName: student.fullName,
+          staffId: student.lrn,
+          schoolEmail: student.schoolEmail,
+          position: 'student'
+        }
+      }
+    });
+  }
+  
+  // Otherwise, check for staff/admin accounts
   const role = getUserRoleFromEmail(email);
   const userId = getUserIdFromEmail(email);
   
@@ -150,60 +226,6 @@ app.post('/api/auth/login', (req, res) => {
     }
   });
 });
-
-// Mock students endpoint (both /students and /api/students)
-const mockSections = [
-  // Grade 7
-  { id: 'sec_g7_a', name: 'Section A', gradeLevel: 'g7', order: 1 },
-  { id: 'sec_g7_b', name: 'Section B', gradeLevel: 'g7', order: 2 },
-  // Grade 8
-  { id: 'sec_g8_a', name: 'Section A', gradeLevel: 'g8', order: 1 },
-  { id: 'sec_g8_b', name: 'Section B', gradeLevel: 'g8', order: 2 },
-  // Grade 9
-  { id: 'sec_g9_a', name: 'Section A', gradeLevel: 'g9', order: 1 },
-  { id: 'sec_g9_b', name: 'Section B', gradeLevel: 'g9', order: 2 },
-  // Grade 10
-  { id: 'sec_g10_a', name: 'Section A', gradeLevel: 'g10', order: 1 },
-  { id: 'sec_g10_b', name: 'Section B', gradeLevel: 'g10', order: 2 },
-  { id: 'sec_g10_c', name: 'Section C', gradeLevel: 'g10', order: 3 },
-  // Grade 11
-  { id: 'sec_g11_a', name: 'Section A', gradeLevel: 'g11', order: 1 },
-  { id: 'sec_g11_b', name: 'Section B', gradeLevel: 'g11', order: 2 },
-  // Grade 12
-  { id: 'sec_g12_a', name: 'Section A', gradeLevel: 'g12', order: 1 },
-  { id: 'sec_g12_b', name: 'Section B', gradeLevel: 'g12', order: 2 },
-];
-
-const mockStudents = [
-  {
-    id: '1',
-    fullName: 'John Doe',
-    email: 'john@school.com',
-    gradeLevel: '10',
-    section: 'A',
-    schoolEmail: 'john.doe@school.edu',
-    gradeLevelId: 'g10',
-    sectionId: 'sec_g10_a',
-    lrn: 'LRN001',
-    role: 'student',
-    isActive: true,
-    violationHistory: []
-  },
-  {
-    id: '2',
-    fullName: 'Jane Smith',
-    email: 'jane@school.com',
-    gradeLevel: '10',
-    section: 'B',
-    schoolEmail: 'jane.smith@school.edu',
-    gradeLevelId: 'g10',
-    sectionId: 'sec_g10_b',
-    lrn: 'LRN002',
-    role: 'student',
-    isActive: true,
-    violationHistory: []
-  }
-];
 
 // Endpoint for backward compatibility
 app.get('/students', (req, res) => {
