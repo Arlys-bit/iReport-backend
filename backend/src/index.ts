@@ -3,11 +3,41 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+
+// Initialize Socket.IO
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+// Socket.IO connection handler
+io.on('connection', (socket) => {
+  console.log('Socket connected:', socket.id);
+  
+  socket.on('user:join', (userId) => {
+    console.log('User joined:', userId, 'with socket:', socket.id);
+    socket.join(`user:${userId}`);
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected:', socket.id);
+  });
+  
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+  });
+});
+
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Middleware
@@ -215,9 +245,10 @@ app.get('/api/reports', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`[START] Server running on port ${PORT}`);
   console.log(`[READY] Health check: http://localhost:${PORT}/health`);
+  console.log(`[READY] Socket.IO: ws://localhost:${PORT}`);
 });
 
 export default app;
