@@ -124,6 +124,13 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Mock students endpoint (both /students and /api/students)
+const mockSections = [
+  { id: 'sec_a', name: 'Section A', gradeLevel: '10', order: 1 },
+  { id: 'sec_b', name: 'Section B', gradeLevel: '10', order: 2 },
+  { id: 'sec_c', name: 'Section C', gradeLevel: '10', order: 3 },
+  { id: 'sec_d', name: 'Section D', gradeLevel: '11', order: 4 },
+];
+
 const mockStudents = [
   {
     id: '1',
@@ -172,16 +179,20 @@ app.post('/api/students', (req, res) => {
     return res.status(400).json({ error: 'Full name, email, and LRN are required' });
   }
   
+  // Default to first section if not provided
+  const assignedSectionId = sectionId || 'sec_a';
+  const assignedSection = mockSections.find(s => s.id === assignedSectionId) || mockSections[0];
+  
   const newStudent = {
     id: 'student_' + Date.now(),
     fullName,
     email,
     lrn,
     gradeLevelId: gradeLevelId || 'g10',
-    sectionId: sectionId || 'sec_a',
+    sectionId: assignedSectionId,
     schoolEmail: schoolEmail || '',
     gradeLevel: gradeLevelId || '10',
-    section: sectionId || 'A',
+    section: assignedSection.name,
     role: 'student',
     isActive: true,
     violationHistory: [],
@@ -243,6 +254,25 @@ app.get('/reports', (req, res) => {
       createdAt: new Date().toISOString()
     }
   ]);
+});
+
+// Sections endpoint
+app.get('/api/sections', (req, res) => {
+  res.json({ data: mockSections });
+});
+
+// Grade levels endpoint
+app.get('/api/grade-levels', (req, res) => {
+  res.json({
+    data: [
+      { id: 'g7', name: 'Grade 7', order: 1, isActive: true },
+      { id: 'g8', name: 'Grade 8', order: 2, isActive: true },
+      { id: 'g9', name: 'Grade 9', order: 3, isActive: true },
+      { id: 'g10', name: 'Grade 10', order: 4, isActive: true },
+      { id: 'g11', name: 'Grade 11', order: 5, isActive: true },
+      { id: 'g12', name: 'Grade 12', order: 6, isActive: true },
+    ]
+  });
 });
 
 app.get('/api/reports', (req, res) => {
