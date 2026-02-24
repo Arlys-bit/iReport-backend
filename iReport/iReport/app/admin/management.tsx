@@ -54,8 +54,8 @@ type TabType = 'teachers' | 'grades';
 export default function ManagementPage() {
   const { colors, isDark } = useSettings();
   const { currentUser, checkPermission } = useAuth();
-  const { students, gradeLevels, sections, createStudent, createGradeLevel, createSection, deleteGradeLevel, deleteSection, isCreatingStudent } = useStudents();
-  const { staff, createStaff, isCreating: isCreatingStaff } = useStaff();
+  const { students, gradeLevels, sections, createStudent, createGradeLevel, createSection, deleteGradeLevel, deleteSection, deleteStudent, isCreatingStudent } = useStudents();
+  const { staff, createStaff, deleteStaff, isCreating: isCreatingStaff } = useStaff();
 
   const [activeTab, setActiveTab] = useState<TabType>('teachers');
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,8 +109,12 @@ export default function ManagementPage() {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   const [showDeleteGradeModal, setShowDeleteGradeModal] = useState(false);
   const [showDeleteSectionModal, setShowDeleteSectionModal] = useState(false);
+  const [showDeleteStudentModal, setShowDeleteStudentModal] = useState(false);
+  const [showDeleteStaffModal, setShowDeleteStaffModal] = useState(false);
   const [selectedGradeToDelete, setSelectedGradeToDelete] = useState<string | null>(null);
   const [selectedSectionToDelete, setSelectedSectionToDelete] = useState<string | null>(null);
+  const [selectedStudentToDelete, setSelectedStudentToDelete] = useState<string | null>(null);
+  const [selectedStaffToDelete, setSelectedStaffToDelete] = useState<string | null>(null);
 
   const canCreateGradesSections = checkPermission('create_grades_sections');
   const canDeleteGradesSections = checkPermission('create_grades_sections');
@@ -355,6 +359,32 @@ export default function ManagementPage() {
     }
   };
 
+  const handleDeleteStudent = async () => {
+    if (!selectedStudentToDelete) return;
+    
+    try {
+      await deleteStudent({ id: selectedStudentToDelete } as any);
+      setShowDeleteStudentModal(false);
+      setSelectedStudentToDelete(null);
+      Alert.alert('Success', 'Student deleted successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to delete student');
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    if (!selectedStaffToDelete) return;
+    
+    try {
+      await deleteStaff({ id: selectedStaffToDelete } as any);
+      setShowDeleteStaffModal(false);
+      setSelectedStaffToDelete(null);
+      Alert.alert('Success', 'Staff member deleted successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to delete staff member');
+    }
+  };
+
   const getGradeName = (id: string) => gradeLevels.find(g => g.id === id)?.name || 'Unknown';
   const getSectionName = (id: string) => sections.find(s => s.id === id)?.name || 'Unknown';
   const allPositions = [...STAFF_POSITIONS, ...customPositions];
@@ -431,22 +461,23 @@ export default function ManagementPage() {
               <View style={styles.categoryDivider} />
               <View style={styles.staffGrid}>
                 {groupedStaff.principal.map(member => (
-                  <TouchableOpacity
-                    key={member.id}
-                    style={styles.staffGridItem}
-                    onPress={() => router.push(`/admin/staff/${member.id}` as any)}
-                  >
-                    {member.profilePhoto ? (
-                      <Image source={{ uri: member.profilePhoto }} style={styles.staffGridPhoto} />
-                    ) : (
-                      <View style={styles.staffGridPhotoPlaceholder}>
-                        <Text style={styles.staffGridInitial}>
-                          {member.fullName.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.staffGridName}>{member.fullName}</Text>
-                  </TouchableOpacity>
+                  <View key={member.id} style={{ position: 'relative' }}>
+                    <TouchableOpacity
+                      style={styles.staffGridItem}
+                      onPress={() => router.push(`/admin/staff/${member.id}` as any)}
+                    >
+                      {member.profilePhoto ? (
+                        <Image source={{ uri: member.profilePhoto }} style={styles.staffGridPhoto} />
+                      ) : (
+                        <View style={styles.staffGridPhotoPlaceholder}>
+                          <Text style={styles.staffGridInitial}>
+                            {member.fullName.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.staffGridName}>{member.fullName}</Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </View>
@@ -458,22 +489,23 @@ export default function ManagementPage() {
               <View style={styles.categoryDivider} />
               <View style={styles.staffGrid}>
                 {groupedStaff.vice_principal.map(member => (
-                  <TouchableOpacity
-                    key={member.id}
-                    style={styles.staffGridItem}
-                    onPress={() => router.push(`/admin/staff/${member.id}` as any)}
-                  >
-                    {member.profilePhoto ? (
-                      <Image source={{ uri: member.profilePhoto }} style={styles.staffGridPhoto} />
-                    ) : (
-                      <View style={styles.staffGridPhotoPlaceholder}>
-                        <Text style={styles.staffGridInitial}>
-                          {member.fullName.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={styles.staffGridName}>{member.fullName}</Text>
-                  </TouchableOpacity>
+                  <View key={member.id} style={{ position: 'relative' }}>
+                    <TouchableOpacity
+                      style={styles.staffGridItem}
+                      onPress={() => router.push(`/admin/staff/${member.id}` as any)}
+                    >
+                      {member.profilePhoto ? (
+                        <Image source={{ uri: member.profilePhoto }} style={styles.staffGridPhoto} />
+                      ) : (
+                        <View style={styles.staffGridPhotoPlaceholder}>
+                          <Text style={styles.staffGridInitial}>
+                            {member.fullName.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.staffGridName}>{member.fullName}</Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </View>
@@ -627,26 +659,27 @@ export default function ManagementPage() {
                             </View>
                           ) : (
                             sectionStudents.map(student => (
-                              <TouchableOpacity
-                                key={student.id}
-                                style={styles.expandedStudentCard}
-                                onPress={() => router.push(`/admin/students/${student.id}` as any)}
-                              >
-                                {student.profilePhoto ? (
-                                  <Image source={{ uri: student.profilePhoto }} style={styles.expandedStudentPhoto} />
-                                ) : (
-                                  <View style={styles.expandedStudentPhotoPlaceholder}>
-                                    <Text style={styles.expandedStudentInitial}>
-                                      {student.fullName.charAt(0).toUpperCase()}
-                                    </Text>
+                              <View key={student.id} style={{ position: 'relative' }}>
+                                <TouchableOpacity
+                                  style={styles.expandedStudentCard}
+                                  onPress={() => router.push(`/admin/students/${student.id}` as any)}
+                                >
+                                  {student.profilePhoto ? (
+                                    <Image source={{ uri: student.profilePhoto }} style={styles.expandedStudentPhoto} />
+                                  ) : (
+                                    <View style={styles.expandedStudentPhotoPlaceholder}>
+                                      <Text style={styles.expandedStudentInitial}>
+                                        {student.fullName.charAt(0).toUpperCase()}
+                                      </Text>
+                                    </View>
+                                  )}
+                                  <View style={styles.expandedStudentInfo}>
+                                    <Text style={styles.expandedStudentName}>{student.fullName}</Text>
+                                    <Text style={styles.expandedStudentLrn}>LRN: {student.lrn}</Text>
                                   </View>
-                                )}
-                                <View style={styles.expandedStudentInfo}>
-                                  <Text style={styles.expandedStudentName}>{student.fullName}</Text>
-                                  <Text style={styles.expandedStudentLrn}>LRN: {student.lrn}</Text>
-                                </View>
-                                <ChevronRight size={16} color={colors.textLight} />
-                              </TouchableOpacity>
+                                  <ChevronRight size={16} color={colors.textLight} />
+                                </TouchableOpacity>
+                              </View>
                             ))
                           )}
                           <TouchableOpacity
