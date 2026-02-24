@@ -13,7 +13,7 @@ export default function StudentLayout() {
       <Stack.Screen 
         name="report" 
         options={{ 
-          title: 'Submit Report',
+          headerShown: false,
           presentation: 'modal',
         }} 
       />
