@@ -88,6 +88,20 @@ const mockSections = [
   { id: 'sec_g12_b', name: 'Section B', gradeLevel: 'g12', order: 2 },
 ];
 
+// Mock admin user
+const mockAdmin = {
+  id: 'admin_1',
+  fullName: 'Admin User',
+  email: 'admin@school.edu',
+  schoolEmail: 'admin@school.edu',
+  password: 'admin123',
+  role: 'admin',
+  position: 'principal',
+  staffId: 'ADMIN001',
+  isActive: true,
+  createdAt: new Date().toISOString()
+};
+
 // Mock students array
 const mockStudents = [
   {
@@ -176,6 +190,24 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
 
+  // Check admin user first
+  if (mockAdmin && (mockAdmin.email === email || mockAdmin.schoolEmail === email)) {
+    return res.json({
+      data: {
+        token: 'mock_token_' + Date.now(),
+        user: {
+          id: mockAdmin.id,
+          email: mockAdmin.email,
+          role: 'admin',
+          fullName: mockAdmin.fullName,
+          staffId: mockAdmin.staffId,
+          schoolEmail: mockAdmin.schoolEmail,
+          position: mockAdmin.position
+        }
+      }
+    });
+  }
+
   // Check in students
   const student = mockStudents.find(s => s.email === email || s.schoolEmail === email);
   if (student) {
@@ -205,7 +237,7 @@ app.post('/api/auth/login', (req, res) => {
         user: {
           id: staff.id,
           email: staff.email,
-          role: 'staff',
+          role: staff.position === 'principal' || staff.position === 'vice_principal' ? 'admin' : 'staff',
           fullName: staff.fullName,
           staffId: staff.staffId,
           schoolEmail: staff.schoolEmail,
