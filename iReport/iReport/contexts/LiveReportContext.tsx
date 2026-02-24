@@ -15,20 +15,15 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
     queryKey: ['liveIncidents'],
     queryFn: async () => {
       try {
-        // Try to fetch from backend
+        // Fetch from backend API
         const response = await apiClient.get('/api/reports');
         if (response.data?.data && Array.isArray(response.data.data)) {
-          // Cache to AsyncStorage
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(response.data.data));
           return response.data.data;
         }
       } catch (error) {
         console.error('Error fetching reports from backend:', error);
+        throw error;
       }
-      
-      // Fallback to local storage
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
     },
     refetchInterval: 5000, // Refetch every 5 seconds to sync reports
   });
@@ -40,7 +35,6 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
   }, [incidentsQuery.data]);
 
   const saveIncidents = async (updated: LiveIncident[]) => {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setIncidents(updated);
     queryClient.invalidateQueries({ queryKey: ['liveIncidents'] });
   };

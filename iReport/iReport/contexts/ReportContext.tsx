@@ -2,9 +2,9 @@ import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IncidentReport, ReportStatus, ReportReviewHistory, Notification } from '@/types';
+import apiClient from '@/services/apiClient';
 
 const STORAGE_KEYS = {
-  REPORTS: 'school_reports',
   NOTIFICATIONS: 'school_notifications',
 };
 
@@ -14,9 +14,19 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
   const reportsQuery = useQuery({
     queryKey: ['reports'],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(STORAGE_KEYS.REPORTS);
-      return stored ? JSON.parse(stored) : [];
+      try {
+        // Fetch from backend API
+        const response = await apiClient.get('/api/reports');
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        throw new Error('Invalid response');
+      } catch (error) {
+        console.error('Error fetching reports from backend:', error);
+        throw error;
+      }
     },
+    refetchInterval: 5000, // Sync with backend every 5 seconds
   });
 
   const notificationsQuery = useQuery({
@@ -29,7 +39,6 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
 
   const saveReportsMutation = useMutation({
     mutationFn: async (reports: IncidentReport[]) => {
-      await AsyncStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
       return reports;
     },
     onSuccess: () => {
@@ -49,54 +58,45 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
 
   const createReportMutation = useMutation({
     mutationFn: async (report: Omit<IncidentReport, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'priority' | 'reviewHistory'>) => {
-      let newReport: IncidentReport;
       try {
         console.log('📝 Creating report:', report);
-        const reports: IncidentReport[] = reportsQuery.data || [];
         
-        const priority = report.incidentType === 'physical_assault' || report.incidentType === 'fighting' 
-          ? 'urgent' 
-          : report.incidentType === 'bullying' || report.incidentType === 'harassment'
-          ? 'high'
-          : 'medium';
-
-        const reviewHistory: ReportReviewHistory[] = [{
-          id: `review_${Date.now()}`,
-          reviewerId: report.reporterId,
-          reviewerName: report.reporterName,
-          action: 'submitted',
-          timestamp: new Date().toISOString(),
-        }];
-
-        newReport = {
+        // Post to backend API
+        const response = await apiClient.post('/api/reports', {
           ...report,
-          id: `report_${Date.now()}`,
           status: 'under_review',
-          priority,
-          reviewHistory,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        });
 
-        const updatedReports = [...reports, newReport];
-        await saveReportsMutation.mutateAsync(updatedReports);
-        console.log('✅ Report created successfully:', newReport);
+        if (response.data?.data) {
+          const newReport = {
+            id: response.data.data.id,
+            ...report,
+            status: 'under_review',
+            priority: report.incidentType === 'physical_assault' || report.incidentType === 'fighting' 
+              ? 'urgent' 
+              : report.incidentType === 'bullying' || report.incidentType === 'harassment'
+              ? 'high'
+              : 'medium',
+            reviewHistory: [{
+              id: `review_${Date.now()}`,
+              reviewerId: report.reporterId,
+              reviewerName: report.reporterName,
+              action: 'submitted',
+              timestamp: new Date().toISOString(),
+            }],
+            createdAt: response.data.data.createdAt,
+            updatedAt: response.data.data.updatedAt,
+          };
+
+          queryClient.invalidateQueries({ queryKey: ['reports'] });
+          console.log('✅ Report created successfully:', newReport);
+          return newReport;
+        }
+        throw new Error('No response data');
       } catch (error) {
         console.error('❌ Error creating report:', error);
         throw error;
       }
-
-      if (report.assignedTeacherId) {
-        await createNotification({
-          userId: report.assignedTeacherId,
-          title: 'New Report Submitted',
-          message: `A student from your class has submitted a new ${report.incidentType} report.`,
-          type: 'report',
-          relatedId: newReport.id,
-        });
-      }
-
-      return newReport;
     },
   });
 
