@@ -5,6 +5,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { query } from './database/connection.js';
+import { runMigrations } from './database/migrations.js';
 
 // Load environment variables
 dotenv.config();
@@ -301,51 +303,73 @@ app.post('/api/auth/login', (req, res) => {
 
 
 // Endpoint for backward compatibility
-app.get('/students', (req, res) => {
-  res.json({ data: mockStudents });
+app.get('/students', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT u.id, u.full_name as "fullName", u.email, s.school_email as "schoolEmail", s.lrn, s.grade_level_id as "gradeLevelId", s.section_id as "sectionId" FROM users u LEFT JOIN students s ON u.id = s.user_id WHERE u.role = $1',
+      ['student']
+    );
+    res.json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
 });
 
 // API endpoints with /api prefix
-app.get('/api/students', (req, res) => {
-  res.json({ data: mockStudents });
+app.get('/api/students', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT u.id, u.full_name as "fullName", u.email, s.school_email as "schoolEmail", s.lrn, s.grade_level_id as "gradeLevelId", s.section_id as "sectionId" FROM users u LEFT JOIN students s ON u.id = s.user_id WHERE u.role = $1',
+      ['student']
+    );
+    res.json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
 });
 
-app.post('/api/students', (req, res) => {
+app.post('/api/students', async (req, res) => {
   const { fullName, email, lrn, gradeLevelId, sectionId, schoolEmail, password } = req.body;
   
   if (!fullName || !email || !lrn) {
     return res.status(400).json({ error: 'Full name, email, and LRN are required' });
   }
   
-  // Default to first section for the given grade level, or first section overall
-  const defaultGradeLevel = gradeLevelId || 'g10';
-  let assignedSectionId = sectionId;
-  
-  if (!assignedSectionId) {
-    const sectionForGrade = mockSections.find(s => s.gradeLevel === defaultGradeLevel);
-    assignedSectionId = sectionForGrade ? sectionForGrade.id : mockSections[0]?.id || 'sec_g10_a';
+  try {
+    // Create user first
+    const userResult = await query(
+      'INSERT INTO users (role, full_name, email, password) VALUES ($1, $2, $3, $4) RETURNING id',
+      ['student', fullName, email, password || 'temp_password']
+    );
+
+    const userId = userResult.rows[0].id;
+
+    // Create student record
+    const studentResult = await query(
+      'INSERT INTO students (user_id, lrn, grade_level_id, section_id, school_email) VALUES ($1, $2, $3, $4, $5) RETURNING user_id as id, lrn',
+      [userId, lrn, gradeLevelId || 'g10', sectionId, schoolEmail || '']
+    );
+
+    const newStudent = {
+      id: userId,
+      fullName,
+      email,
+      lrn,
+      gradeLevelId: gradeLevelId || 'g10',
+      sectionId,
+      schoolEmail: schoolEmail || '',
+      role: 'student',
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+
+    res.status(201).json({ data: newStudent });
+  } catch (error) {
+    console.error('Error creating student:', error);
+    res.status(500).json({ error: 'Failed to create student' });
   }
-  
-  const assignedSection = mockSections.find(s => s.id === assignedSectionId) || { name: 'Unknown', gradeLevel: defaultGradeLevel };
-  
-  const newStudent = {
-    id: 'student_' + Date.now(),
-    fullName,
-    email,
-    lrn,
-    gradeLevelId: defaultGradeLevel,
-    sectionId: assignedSectionId,
-    schoolEmail: schoolEmail || '',
-    gradeLevel: gradeLevelId || '10',
-    section: assignedSection.name,
-    role: 'student',
-    isActive: true,
-    violationHistory: [],
-    createdAt: new Date().toISOString()
-  };
-  
-  mockStudents.push(newStudent);
-  res.status(201).json({ data: newStudent });
 });
 
 // Staff creation endpoint
@@ -444,11 +468,19 @@ app.get('/reports', (req, res) => {
 });
 
 // New API reports endpoints
-app.get('/api/reports', (req, res) => {
-  res.json({ data: mockReports });
+app.get('/api/reports', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", reporter_lrn as "reporterLrn", incident_type as "incidentType", description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports ORDER BY submitted_at DESC'
+    );
+    res.json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
 });
 
-app.post('/api/reports', (req, res) => {
+app.post('/api/reports', async (req, res) => {
   const {
     reporterId,
     reporterName,
@@ -467,53 +499,87 @@ app.post('/api/reports', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const newReport = {
-    id: generateReportId(),
-    reporterId,
-    reporterName,
-    reporterGradeLevelId,
-    reporterSectionId,
-    buildingId,
-    buildingName,
-    floor,
-    room,
-    incidentType,
-    description,
-    status,
-    priority: incidentType === 'emergency' ? 'critical' : 'high',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  try {
+    const result = await query(
+      `INSERT INTO incident_reports (reporter_id, reporter_name, incident_type, description, building, floor, room, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType", 
+                 description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt"`,
+      [reporterId, reporterName, incidentType, description, buildingName, floor, room, status]
+    );
 
-  mockReports.push(newReport);
-  res.status(201).json({ data: newReport });
-});
-
-app.get('/api/reports/:id', (req, res) => {
-  const { id } = req.params;
-  const report = mockReports.find(r => r.id === id);
-
-  if (!report) {
-    return res.status(404).json({ error: 'Report not found' });
+    const newReport = result.rows[0];
+    res.status(201).json({ data: newReport });
+  } catch (error) {
+    console.error('Error creating report:', error);
+    res.status(500).json({ error: 'Failed to create report' });
   }
-
-  res.json({ data: report });
 });
 
-app.put('/api/reports/:id', (req, res) => {
+app.get('/api/reports/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await query(
+      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType", description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    res.json({ data: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching report:', error);
+    res.status(500).json({ error: 'Failed to fetch report' });
+  }
+});
+
+app.put('/api/reports/:id', async (req, res) => {
   const { id } = req.params;
   const { status, description } = req.body;
 
-  const report = mockReports.find(r => r.id === id);
-  if (!report) {
-    return res.status(404).json({ error: 'Report not found' });
+  try {
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
+    if (status) {
+      updateFields.push(`status = $${paramCount}`);
+      updateValues.push(status);
+      paramCount++;
+    }
+    if (description) {
+      updateFields.push(`description = $${paramCount}`);
+      updateValues.push(description);
+      paramCount++;
+    }
+
+    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+
+    if (updateFields.length === 1) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updateValues.push(id);
+
+    const result = await query(
+      `UPDATE incident_reports SET ${updateFields.join(', ')} WHERE id = $${paramCount} 
+       RETURNING id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType",
+                 description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt"`,
+      updateValues
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    res.json({ data: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating report:', error);
+    res.status(500).json({ error: 'Failed to update report' });
   }
-
-  if (status) report.status = status;
-  if (description) report.description = description;
-  report.updatedAt = new Date().toISOString();
-
-  res.json({ data: report });
 });
 
 // Sections endpoint
@@ -574,10 +640,23 @@ app.get('/api/grade-levels', (req, res) => {
 });
 
 // Start server
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[START] Server running on port ${PORT}`);
-  console.log(`[READY] Health check: http://localhost:${PORT}/health`);
-  console.log(`[READY] Socket.IO: ws://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    // Run database migrations
+    await runMigrations();
+    console.log('✓ Database migrations completed');
+
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`[START] Server running on port ${PORT}`);
+      console.log(`[READY] Health check: http://localhost:${PORT}/health`);
+      console.log(`[READY] Socket.IO: ws://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;
