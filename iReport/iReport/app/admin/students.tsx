@@ -20,6 +20,7 @@ import { X, Camera, User, ChevronDown, Search } from 'lucide-react-native';
 import { useStudents } from '@/contexts/StudentsContext';
 import { Student } from '@/types';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function ManageStudents() {
   const { students, gradeLevels, sections, createStudent, isCreatingStudent } = useStudents();
@@ -300,13 +301,15 @@ export default function ManageStudents() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                autoCapitalize="none"
+                iconColor={colors.textLight}
+              />
                 autoCapitalize="none"
               />
             </View>

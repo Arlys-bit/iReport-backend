@@ -47,6 +47,7 @@ import {
 } from '@/types';
 import { STAFF_POSITIONS, SUBJECT_SPECIALIZATIONS, TEACHER_RANKS, CLUSTER_ROLES, STAFF_PERMISSIONS } from '@/constants/staff';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 type TabType = 'teachers' | 'grades';
 
@@ -842,25 +843,25 @@ export default function ManagementPage() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
+              <PasswordInput
                 style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
                 value={studentForm.password}
                 onChangeText={text => setStudentForm(prev => ({ ...prev, password: text }))}
                 placeholder="Enter password"
                 placeholderTextColor={colors.textSecondary}
-                secureTextEntry
+                iconColor={colors.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>Confirm Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
+              <PasswordInput
                 style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
                 value={studentForm.confirmPassword}
                 onChangeText={text => setStudentForm(prev => ({ ...prev, confirmPassword: text }))}
                 placeholder="Confirm password"
                 placeholderTextColor={colors.textSecondary}
-                secureTextEntry
+                iconColor={colors.textSecondary}
               />
             </View>
           </ScrollView>
@@ -944,25 +945,25 @@ export default function ManagementPage() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
+              <PasswordInput
                 style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
                 value={staffForm.password}
                 onChangeText={text => setStaffForm(prev => ({ ...prev, password: text }))}
                 placeholder="Enter password"
                 placeholderTextColor={colors.textSecondary}
-                secureTextEntry
+                iconColor={colors.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>Confirm Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
+              <PasswordInput
                 style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
                 value={staffForm.confirmPassword}
                 onChangeText={text => setStaffForm(prev => ({ ...prev, confirmPassword: text }))}
                 placeholder="Confirm password"
                 placeholderTextColor={colors.textSecondary}
-                secureTextEntry
+                iconColor={colors.textSecondary}
               />
             </View>
 

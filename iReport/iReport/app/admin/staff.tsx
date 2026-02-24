@@ -21,6 +21,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { StaffMember, StaffPosition, SubjectSpecialization, TeacherRank, ClusterRole, StaffPermission } from '@/types';
 import { STAFF_POSITIONS, SUBJECT_SPECIALIZATIONS, TEACHER_RANKS, CLUSTER_ROLES, STAFF_PERMISSIONS } from '@/constants/staff';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function ManageStaff() {
   const { staff, createStaff, isCreating } = useStaff() as any;
@@ -361,14 +362,14 @@ export default function ManageStaff() {
               <Text style={styles.label}>
                 Password <Text style={styles.required}>*</Text>
               </Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
                 autoCapitalize="none"
+                iconColor={colors.textLight}
               />
             </View>
 

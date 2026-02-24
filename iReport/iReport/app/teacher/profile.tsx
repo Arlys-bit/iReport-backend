@@ -38,6 +38,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { StaffMember } from '@/types';
 import { STAFF_POSITIONS, STAFF_PERMISSIONS } from '@/constants/staff';
+import PasswordInput from '@/components/PasswordInput';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -692,7 +693,7 @@ export default function TeacherProfile() {
                 <X size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <TextInput
+            <PasswordInput
               style={{
                 backgroundColor: colors.background,
                 borderWidth: 1,
@@ -708,9 +709,9 @@ export default function TeacherProfile() {
               placeholderTextColor={colors.textSecondary}
               value={currentPassword}
               onChangeText={setCurrentPassword}
-              secureTextEntry
+              iconColor={colors.textSecondary}
             />
-            <TextInput
+            <PasswordInput
               style={{
                 backgroundColor: colors.background,
                 borderWidth: 1,
@@ -726,9 +727,9 @@ export default function TeacherProfile() {
               placeholderTextColor={colors.textSecondary}
               value={newPassword}
               onChangeText={setNewPassword}
-              secureTextEntry
+              iconColor={colors.textSecondary}
             />
-            <TextInput
+            <PasswordInput
               style={{
                 backgroundColor: colors.background,
                 borderWidth: 1,
@@ -744,7 +745,7 @@ export default function TeacherProfile() {
               placeholderTextColor={colors.textSecondary}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              secureTextEntry
+              iconColor={colors.textSecondary}
             />
             <View style={dynamicStyles.logoutModalButtons}>
               <TouchableOpacity
@@ -806,9 +807,9 @@ export default function TeacherProfile() {
               placeholderTextColor={colors.textSecondary}
               value={staffNewPassword}
               onChangeText={setStaffNewPassword}
-              secureTextEntry
+              iconColor={colors.textSecondary}
             />
-            <TextInput
+            <PasswordInput
               style={{
                 backgroundColor: colors.background,
                 borderWidth: 1,
@@ -824,7 +825,7 @@ export default function TeacherProfile() {
               placeholderTextColor={colors.textSecondary}
               value={staffConfirmPassword}
               onChangeText={setStaffConfirmPassword}
-              secureTextEntry
+              iconColor={colors.textSecondary}
             />
             <View style={dynamicStyles.logoutModalButtons}>
               <TouchableOpacity

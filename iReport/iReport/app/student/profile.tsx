@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useStudents } from '@/contexts/StudentsContext';
 import { Student } from '@/types';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 const LANGUAGES = [
   { code: 'en', name: 'English' },
@@ -313,35 +314,35 @@ export default function StudentProfile() {
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Current Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 placeholder="Enter current password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                iconColor={colors.textLight}
               />
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>New Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="Enter new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                iconColor={colors.textLight}
               />
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm New Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                iconColor={colors.textLight}
               />
             </View>
             <TouchableOpacity 

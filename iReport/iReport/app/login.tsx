@@ -18,6 +18,7 @@ import { AlertCircle, Trash2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -83,15 +84,15 @@ export default function LoginScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text }]}>Password</Text>
-              <TextInput
+              <PasswordInput
                 style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter your password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
                 autoCapitalize="none"
                 testID="login-password-input"
+                iconColor={colors.textSecondary}
               />
             </View>
 

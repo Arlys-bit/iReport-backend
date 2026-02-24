@@ -35,6 +35,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/contexts/ReportContext';
 import { Student, ViolationRecord } from '@/types';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function StudentProfile() {
   const { id } = useLocalSearchParams();
@@ -485,24 +486,24 @@ export default function StudentProfile() {
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>New Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="Enter new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                iconColor={colors.textLight}
               />
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
+                iconColor={colors.textLight}
               />
             </View>
             <TouchableOpacity style={styles.modalButton} onPress={handleChangePassword}>

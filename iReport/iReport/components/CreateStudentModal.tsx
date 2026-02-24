@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
+import PasswordInput from '@/components/PasswordInput';
 
 interface Props {
   visible: boolean;
@@ -105,7 +106,7 @@ export default function CreateStudentModal({ visible, onClose }: Props) {
             <TextInput value={email} onChangeText={setEmail} placeholder="Enter school email" autoCapitalize="none" keyboardType="email-address" style={styles.input} testID="student-email" />
 
             <Text style={styles.label}>Password *</Text>
-            <TextInput value={password} onChangeText={setPassword} placeholder="Enter password" secureTextEntry style={styles.input} testID="student-password" />
+            <PasswordInput value={password} onChangeText={setPassword} placeholder="Enter password" style={styles.input} testID="student-password" iconColor={colors.textLight} />
 
             <View style={styles.hintBox}>
               <Text style={styles.hintText}>Students will use their school email and password to log in. Profile photos help prevent prank reports.</Text>

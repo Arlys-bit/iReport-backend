@@ -43,6 +43,7 @@ import {
   STAFF_PERMISSIONS,
 } from '@/constants/staff';
 import colors from '@/constants/colors';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function StaffProfile() {
   const { id } = useLocalSearchParams();
@@ -556,27 +557,28 @@ export default function StaffProfile() {
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>New Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="Enter new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
                 autoCapitalize="none"
+                iconColor={colors.textLight}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
+              <PasswordInput
                 style={styles.input}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm new password"
                 placeholderTextColor={colors.textLight}
-                secureTextEntry
                 autoCapitalize="none"
+                iconColor={colors.textLight}
+              />
               />
             </View>
 
