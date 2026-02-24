@@ -346,10 +346,17 @@ app.post('/api/students', async (req, res) => {
 
     const userId = userResult.rows[0].id;
 
-    // Create student record - sectionId is optional
+    // Create student record - gradeLevelId and sectionId are OPTIONAL (null if not valid UUIDs)
+    // If gradeLevelId is provided but not a UUID, treat it as null
+    let finalGradeLevelId = null;
+    if (gradeLevelId && typeof gradeLevelId === 'string' && gradeLevelId.length === 36) {
+      // Check if it looks like a UUID (basic check)
+      finalGradeLevelId = gradeLevelId;
+    }
+
     const studentResult = await query(
       'INSERT INTO students (user_id, lrn, grade_level_id, section_id, school_email) VALUES ($1, $2, $3, $4, $5) RETURNING user_id as id, lrn',
-      [userId, lrn, gradeLevelId || 'g10', sectionId || null, schoolEmail || '']
+      [userId, lrn, finalGradeLevelId, sectionId || null, schoolEmail || '']
     );
 
     const newStudent = {
@@ -357,7 +364,7 @@ app.post('/api/students', async (req, res) => {
       fullName,
       email,
       lrn,
-      gradeLevelId: gradeLevelId || 'g10',
+      gradeLevelId: finalGradeLevelId,
       sectionId: sectionId || null,
       schoolEmail: schoolEmail || '',
       role: 'student',
@@ -371,7 +378,7 @@ app.post('/api/students', async (req, res) => {
     console.error('Error creating student:', errorMsg);
     // Check for specific error types
     if (errorMsg?.includes('duplicate key') || errorMsg?.includes('23505')) {
-      return res.status(409).json({ error: 'Email already exists' });
+      return res.status(409).json({ error: 'Email or LRN already exists' });
     }
     res.status(500).json({ error: 'Failed to create student: ' + errorMsg });
   }
