@@ -367,12 +367,13 @@ app.post('/api/students', async (req, res) => {
 
     res.status(201).json({ data: newStudent });
   } catch (error: any) {
-    console.error('Error creating student:', error.message);
+    const errorMsg = error?.message || String(error) || 'Unknown error';
+    console.error('Error creating student:', errorMsg);
     // Check for specific error types
-    if (error.message?.includes('duplicate key')) {
+    if (errorMsg?.includes('duplicate key') || errorMsg?.includes('23505')) {
       return res.status(409).json({ error: 'Email already exists' });
     }
-    res.status(500).json({ error: 'Failed to create student: ' + error.message });
+    res.status(500).json({ error: 'Failed to create student: ' + errorMsg });
   }
 });
 
