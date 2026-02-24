@@ -12,6 +12,55 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
+// Middleware (apply before Socket.IO routes)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+}));
+app.use(express.json());
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'iReport Backend API', version: '1.0.0' });
+});
+
+// GET /api/pull - Pull all data from backend (students, staff, sections, reports, grades)
+app.get('/api/pull', (req, res) => {
+  const sectionsWithGradeLevelId = mockSections.map(s => ({
+    ...s,
+    gradeLevelId: s.gradeLevel,
+    gradeLevel: undefined
+  }));
+
+  const staffList = global.mockStaff || [];
+
+  res.json({
+    data: {
+      students: mockStudents,
+      staff: staffList,
+      sections: sectionsWithGradeLevelId,
+      gradeLevels: [
+        { id: 'g7', name: 'Grade 7', order: 1, isActive: true },
+        { id: 'g8', name: 'Grade 8', order: 2, isActive: true },
+        { id: 'g9', name: 'Grade 9', order: 3, isActive: true },
+        { id: 'g10', name: 'Grade 10', order: 4, isActive: true },
+        { id: 'g11', name: 'Grade 11', order: 5, isActive: true },
+        { id: 'g12', name: 'Grade 12', order: 6, isActive: true },
+      ],
+      reports: mockReports,
+      admin: mockAdmin,
+      timestamp: new Date().toISOString(),
+    }
+  });
+});
+
 // Initialize Socket.IO
 const io = new SocketIOServer(server, {
   cors: {
@@ -39,15 +88,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
-
-// Middleware
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false,
-}));
-app.use(express.json());
 
 // Helper function to determine user role based on email
 const getUserRoleFromEmail = (email: string): string => {
@@ -133,6 +173,9 @@ const mockStudents = [
     violationHistory: []
   }
 ];
+
+// Mock reports array for persistence
+let mockReports: any[] = [];
 
 // Health check
 app.get('/health', (req, res) => {
@@ -373,9 +416,6 @@ app.put('/api/auth/students/:id/password', (req, res) => {
   res.json({ data: student, message: 'Password updated successfully' });
 });
 
-// Mock reports array for persistence
-let mockReports: any[] = [];
-
 // Helper function to format report ID
 const generateReportId = () => `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -513,36 +553,6 @@ app.delete('/api/sections/:id', (req, res) => {
   
   const deletedSection = mockSections.splice(index, 1)[0];
   res.json({ data: deletedSection, message: 'Section deleted successfully' });
-});
-
-// GET /api/pull - Pull all data from backend (students, staff, sections, reports, grades)
-app.get('/api/pull', (req, res) => {
-  const sectionsWithGradeLevelId = mockSections.map(s => ({
-    ...s,
-    gradeLevelId: s.gradeLevel,
-    gradeLevel: undefined
-  }));
-
-  const staffList = global.mockStaff || [];
-
-  res.json({
-    data: {
-      students: mockStudents,
-      staff: staffList,
-      sections: sectionsWithGradeLevelId,
-      gradeLevels: [
-        { id: 'g7', name: 'Grade 7', order: 1, isActive: true },
-        { id: 'g8', name: 'Grade 8', order: 2, isActive: true },
-        { id: 'g9', name: 'Grade 9', order: 3, isActive: true },
-        { id: 'g10', name: 'Grade 10', order: 4, isActive: true },
-        { id: 'g11', name: 'Grade 11', order: 5, isActive: true },
-        { id: 'g12', name: 'Grade 12', order: 6, isActive: true },
-      ],
-      reports: mockReports,
-      admin: mockAdmin,
-      timestamp: new Date().toISOString(),
-    }
-  });
 });
 
 // Grade levels endpoint
