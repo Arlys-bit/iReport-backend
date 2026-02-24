@@ -86,6 +86,7 @@ export const runMigrations = async () => {
         floor VARCHAR(10),
         room VARCHAR(50),
         involved_student_ids UUID[] DEFAULT '{}',
+        report_type VARCHAR(50) DEFAULT 'regular',
         status VARCHAR(50) DEFAULT 'under_review',
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

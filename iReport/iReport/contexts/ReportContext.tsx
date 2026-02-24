@@ -15,8 +15,8 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
     queryKey: ['reports'],
     queryFn: async () => {
       try {
-        // Fetch from backend API
-        const response = await apiClient.get('/api/reports');
+        // Fetch from backend API - only regular reports
+        const response = await apiClient.get('/api/reports?type=regular');
         if (response.data?.data && Array.isArray(response.data.data)) {
           return response.data.data;
         }
@@ -61,9 +61,10 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
       try {
         console.log('📝 Creating report:', report);
         
-        // Post to backend API
+        // Post to backend API with type=regular
         const response = await apiClient.post('/api/reports', {
           ...report,
+          reportType: 'regular',
           status: 'under_review',
         });
 

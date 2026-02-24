@@ -470,8 +470,10 @@ app.get('/reports', (req, res) => {
 // New API reports endpoints
 app.get('/api/reports', async (req, res) => {
   try {
+    const { type = 'regular' } = req.query;
     const result = await query(
-      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", reporter_lrn as "reporterLrn", incident_type as "incidentType", description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports ORDER BY submitted_at DESC'
+      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", reporter_lrn as "reporterLrn", incident_type as "incidentType", description, building as "buildingName", floor, room, status, report_type as "reportType", submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports WHERE report_type = $1 ORDER BY submitted_at DESC',
+      [type]
     );
     res.json({ data: result.rows });
   } catch (error) {
@@ -492,6 +494,7 @@ app.post('/api/reports', async (req, res) => {
     room,
     incidentType,
     description,
+    reportType = 'regular',
     status = 'pending',
   } = req.body;
 
@@ -501,11 +504,11 @@ app.post('/api/reports', async (req, res) => {
 
   try {
     const result = await query(
-      `INSERT INTO incident_reports (reporter_id, reporter_name, incident_type, description, building, floor, room, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO incident_reports (reporter_id, reporter_name, incident_type, description, building, floor, room, report_type, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType", 
-                 description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt"`,
-      [reporterId, reporterName, incidentType, description, buildingName, floor, room, status]
+                 description, building as "buildingName", floor, room, report_type as "reportType", status, submitted_at as "createdAt", updated_at as "updatedAt"`,
+      [reporterId, reporterName, incidentType, description, buildingName, floor, room, reportType, status]
     );
 
     const newReport = result.rows[0];
@@ -521,7 +524,7 @@ app.get('/api/reports/:id', async (req, res) => {
 
   try {
     const result = await query(
-      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType", description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports WHERE id = $1',
+      'SELECT id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType", description, building as "buildingName", floor, room, report_type as "reportType", status, submitted_at as "createdAt", updated_at as "updatedAt" FROM incident_reports WHERE id = $1',
       [id]
     );
 
@@ -567,7 +570,7 @@ app.put('/api/reports/:id', async (req, res) => {
     const result = await query(
       `UPDATE incident_reports SET ${updateFields.join(', ')} WHERE id = $${paramCount} 
        RETURNING id, reporter_id as "reporterId", reporter_name as "reporterName", incident_type as "incidentType",
-                 description, building as "buildingName", floor, room, status, submitted_at as "createdAt", updated_at as "updatedAt"`,
+                 description, building as "buildingName", floor, room, report_type as "reportType", status, submitted_at as "createdAt", updated_at as "updatedAt"`,
       updateValues
     );
 

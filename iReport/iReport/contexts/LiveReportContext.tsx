@@ -15,8 +15,8 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
     queryKey: ['liveIncidents'],
     queryFn: async () => {
       try {
-        // Fetch from backend API
-        const response = await apiClient.get('/api/reports');
+        // Fetch from backend API - only live reports
+        const response = await apiClient.get('/api/reports?type=live');
         if (response.data?.data && Array.isArray(response.data.data)) {
           return response.data.data;
         }
@@ -53,9 +53,10 @@ export const [LiveReportsProvider, useLiveReports] = createContextHook(() => {
       description: string;
     }) => {
       try {
-        // Post to backend API
+        // Post to backend API with type=live
         const response = await apiClient.post('/api/reports', {
           ...data,
+          reportType: 'live',
           status: 'pending',
         });
 
