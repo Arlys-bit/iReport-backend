@@ -346,10 +346,10 @@ app.post('/api/students', async (req, res) => {
 
     const userId = userResult.rows[0].id;
 
-    // Create student record
+    // Create student record - sectionId is optional
     const studentResult = await query(
       'INSERT INTO students (user_id, lrn, grade_level_id, section_id, school_email) VALUES ($1, $2, $3, $4, $5) RETURNING user_id as id, lrn',
-      [userId, lrn, gradeLevelId || 'g10', sectionId, schoolEmail || '']
+      [userId, lrn, gradeLevelId || 'g10', sectionId || null, schoolEmail || '']
     );
 
     const newStudent = {
@@ -358,7 +358,7 @@ app.post('/api/students', async (req, res) => {
       email,
       lrn,
       gradeLevelId: gradeLevelId || 'g10',
-      sectionId,
+      sectionId: sectionId || null,
       schoolEmail: schoolEmail || '',
       role: 'student',
       isActive: true,
@@ -366,9 +366,13 @@ app.post('/api/students', async (req, res) => {
     };
 
     res.status(201).json({ data: newStudent });
-  } catch (error) {
-    console.error('Error creating student:', error);
-    res.status(500).json({ error: 'Failed to create student' });
+  } catch (error: any) {
+    console.error('Error creating student:', error.message);
+    // Check for specific error types
+    if (error.message?.includes('duplicate key')) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create student: ' + error.message });
   }
 });
 
