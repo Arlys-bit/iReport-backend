@@ -334,6 +334,12 @@ app.post('/api/staff', (req, res) => {
   res.status(201).json({ data: newStaff });
 });
 
+// GET staff endpoint
+app.get('/api/staff', (req, res) => {
+  const staffList = global.mockStaff || [];
+  res.json({ data: staffList });
+});
+
 app.put('/api/auth/students/:id/email', (req, res) => {
   const { id } = req.params;
   const { newEmail } = req.body;
@@ -507,6 +513,36 @@ app.delete('/api/sections/:id', (req, res) => {
   
   const deletedSection = mockSections.splice(index, 1)[0];
   res.json({ data: deletedSection, message: 'Section deleted successfully' });
+});
+
+// GET /api/pull - Pull all data from backend (students, staff, sections, reports, grades)
+app.get('/api/pull', (req, res) => {
+  const sectionsWithGradeLevelId = mockSections.map(s => ({
+    ...s,
+    gradeLevelId: s.gradeLevel,
+    gradeLevel: undefined
+  }));
+
+  const staffList = global.mockStaff || [];
+
+  res.json({
+    data: {
+      students: mockStudents,
+      staff: staffList,
+      sections: sectionsWithGradeLevelId,
+      gradeLevels: [
+        { id: 'g7', name: 'Grade 7', order: 1, isActive: true },
+        { id: 'g8', name: 'Grade 8', order: 2, isActive: true },
+        { id: 'g9', name: 'Grade 9', order: 3, isActive: true },
+        { id: 'g10', name: 'Grade 10', order: 4, isActive: true },
+        { id: 'g11', name: 'Grade 11', order: 5, isActive: true },
+        { id: 'g12', name: 'Grade 12', order: 6, isActive: true },
+      ],
+      reports: mockReports,
+      admin: mockAdmin,
+      timestamp: new Date().toISOString(),
+    }
+  });
 });
 
 // Grade levels endpoint
