@@ -95,6 +95,13 @@ export const runMigrations = async () => {
     `);
     console.log('✓ Created incident_reports table');
 
+    // Add report_type column if it doesn't exist (for existing tables)
+    await query(`
+      ALTER TABLE IF EXISTS incident_reports
+      ADD COLUMN IF NOT EXISTS report_type VARCHAR(50) DEFAULT 'regular'
+    `);
+    console.log('✓ Ensured report_type column exists');
+
     await query(`
       CREATE TABLE IF NOT EXISTS report_review_history (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
